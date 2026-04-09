@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <header class="topbar">
+            <h1 class="topbar-title">Dashboard</h1>
+            <div class="topbar-right">
+                <span class="greeting">hi, <!--username--></span>
+            </div>
+        </header>
+
+        <main class="main">
+            <section class="card workout-card">
+                <div class="card-header">
+                    <h2 class="card-title">Today's Training Sessions:</h2>
+                </div>
+                <div class="workout-body">
+                    <!--WORKOUT CONTENT SHOULD GO HERE LATER-->
+                    <button class="btn-edit">Edit</button>
+                </div>
+            </section>
+
+            <div class="two-col">
+                <section class="card calories-card">
+                    <h2 class="card-title">Net Calories Today:</h2>
+                    <ul class="cal-list">
+                        <!--CALORIE BREAKDOWN SHOUDL GO HERE LATER-->
+                    </ul>
+                    <div class="cal-total">
+                        <span>Total: </span>
+                        <span class="cal-total-val"></span>
+                    </div>
+                    <div class="cal-targets">
+                        <p><strong>Target (Maintenance): </strong></p>
+                        <p><strong>Target (Cut): </strong></p>
+                    </div>
+                    <button class="btn-edit">Edit</button>
+                </section>
+
+            </div>
+
+            <section class="card profile-card">
+                <div class="profile-inner">
+                    <div class="profile-left">
+                        <h2 class="profile-title">My Profile</h2>
+                        <ul class="profile-stats">
+                            <!--WEEKLY STATS WILL GO HERE LATER ON ONCE WE FIGURE OUT HOW TO CLAC THEM :)-->
+                        </ul>
+                        <div class="profile-actions">
+                            <a href="profile.html" class="btn-primary">View More</a>
+                            <button class="btn-secondary">Edit Goals</button>
+                        </div>
+                    </div>
+                    <div class="profile-avatar">
+                        <div class="avatar-placeholder" aria-label="Profile picture">
+                            <!--Avatar image or initials here later-->
+                        </div>
+                    </div>
+                </div>
+                <div class="friends-feed-btn-wrap">
+                    <a href="feed.html" class="btn-friends">View Friends' Posts</a>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>
