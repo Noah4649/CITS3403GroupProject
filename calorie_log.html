@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        .progress-container {
+            width: 300px;
+            height: 30px;
+            background-color:#949494 ;
+        }
+
+        .progress-bar {
+        height: 100%;
+        width: 0%;
+        background-color: #759cc9;
+}
+    </style>
+    <body>
+         <div class="progress-container">
+            <div class="progress-bar" id="progressbar"></div>
+        </div>
+    </body>
+
+    <script>
+        let totalcalories = 4000;  // example values, well need to make these change with user input
+        let maxcalories = 5000;
+        function update_bar() {
+            let percent = (totalcalories/maxcalories)*100;
+            if (percent > 100) percent = 100; // capping the progress  bar to 100% calorie goal
+            document.getElementById("progressbar").style.width = percent + "%";
+        }
+    </script>
+</html>
