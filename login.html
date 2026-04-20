@@ -1,25 +1,60 @@
-<!Doctype HTML>
-<main>
-    <Title> Login Page</Title>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login – FitTrack</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="styles.css">
+    </head>
     <body>
-        <form action="/action_page.php">
-            <h1>Login</h1>
-            <label for="username">Username: </label>
-            <input type="text" id = "username" name="username">
-            <br><br>
-            <label for="password">Password: </label>
-            <input type="text" id = "password" name="password">
-            <br><br>
-            <input type ="checkbox" id ="showpassword">
-            <label for="showpassword">Show password</label>
-            <br><br>
-            <input type="submit" value="submit"> 
-            <br><br>
-            <a href = "signup.html">Sign up</a> 
-            <span style="margin-left: 30px;"></span>
-            <a href = "password_reset.html">forgot password?</a>
-        </form>
-        
+
+        <div class="auth-wrapper">
+            <div class="card auth-card shadow-sm">
+
+                <div class="auth-brand">
+                    <span class="brand-name">FitTrack</span>
+                </div>
+
+                <h1 class="auth-title">Login</h1>
+
+                <form id="login-form" novalidate>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="show-password">
+                        <label class="form-check-label" for="show-password">Show password</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 auth-submit-btn">Login</button>
+
+                </form>
+
+                <div class="auth-footer">
+                    <a href="signup.html" class="auth-link">Don't have an account? Sign up</a>
+                    <a href="password_reset.html" class="auth-link">Forgot password?</a>
+                </div>
+
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.getElementById('show-password').addEventListener('change', function () {
+                const pwd = document.getElementById('password');
+                pwd.type = this.checked ? 'text' : 'password';
+            });
+        </script>
 
     </body>
-</main>
+</html>
