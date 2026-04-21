@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Calories - GymTracker</title>
+        
+        <!--bootstrap css link-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!--css style sheet page link-->
+        <link rel="stylesheet" href="cssstyle sheet file name here">
+    </head> 
+
+    <body>
+        <!--navbar-->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="welcome-page.html">GymTracker</a>
+                <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#mainNav"
+                    aria-controls="mainNav"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                    </button>
+                    
+                    <div class="collapse navbar-collapse" id="mainNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="dashboard.html">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="history-page.html"> History</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="friend-feed.html"> Friend Feed</a>
+                            </li>
+                             <li class="nav-item">
+                                <a class="nav-link" href="profile-page.html"> Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="calories-page.html"> Calories</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="other_users_profile-page.html"> Friends</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="settings-page.html"> Settings</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="leaderboard-page.html"> Leaderboard</a>
+                            </li>
+
+                        </ul>
+                    </div>
+            </div>
+        </nav>
+
+        <!--Calories header-->
+        <section class="leaderboard-header pt-0 pb-4 text-left">
+            <div class="container">
+                <h1 class="display-4 fw-bold">Calories</h1>
+                <p class="lead">Keep track of your past calories and goals!</p>
+            </div>
+        </section>
+
+        <!-- Active calories goal -->
+        <section class="mb-4">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h2 class="h4 mb-2 text-center">Active Goal: Calories Burnt</h2>
+                                <p class="mb-2 text-center"><strong>Today's Progress:</strong> 420 / 600 kcal</p>
+
+                                <div class="progress" role="progressbar" aria-label="Calories burnt progress" aria-valuenow="70" aria-valuemin="0" aria-valuemax="600" style="height: 30px;">
+                                    <div class="progress-bar progress-bar-striped" style="width: 70%;">
+                                    </div>
+                                </div>
+
+                                <p class="text-muted mt-2 mb-0 text-center">180 kcal remaining to hit today's goal.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary cards -->
+        <section class="mb-4">
+            <div class="container">
+                <div class="row g-4 justify-content-center">
+
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card shadow-sm h-100 text-center">
+                            <div class="card-body">
+                                <h3 class="h5 mb-2">Calories Consumed</h3>
+                                <p class="display-6 fw-bold mb-1">2050</p>
+                                <p class="text-muted mb-0">kcal today</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card shadow-sm h-100 text-center">
+                            <div class="card-body">
+                                <h3 class="h5 mb-2">Calories Burned</h3>
+                                <p class="display-6 fw-bold mb-1">420</p>
+                                <p class="text-muted mb-0">kcal today</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card shadow-sm h-100 text-center">
+                            <div class="card-body">
+                                <h3 class="h5 mb-2">Net Calories</h3>
+                                <p class="display-6 fw-bold mb-1">1630</p>
+                                <p class="text-muted mb-0">kcal remaining after burn</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-4">
+            <div class="container">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Calories Burnt This Week</h2>
+                        <canvas id="caloriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </body>
+
+</html>
