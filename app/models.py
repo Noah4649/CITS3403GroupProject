@@ -40,7 +40,7 @@ class Workout(db.Model):
     notes = db.Column(db.String(500))
     is_public = db.Column(db.Boolean, default=False)
 
-    exercises = db.relationship('Exercise', backref='workout', lazy=True)
+    exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade='all, delete-orphan')
 
 class Exercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
