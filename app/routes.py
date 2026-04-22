@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from app import db
-from app.models import User, Workout, Meal
+from app.models import User, Workout, Meal, Achievement
 
 main = Blueprint('main', __name__)
 
@@ -86,7 +86,14 @@ def dashboard():
 @main.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    workouts = Workout.query.filter_by(user_id=current_user.id).all()
+    achievements = Achievement.query.filter_by(user_id=current_user.id).all()
+    total_calories_burned = sum(w.calories_burned or 0 for w in workouts)
+    return render_template('profile.html',
+        workouts=workouts,
+        achievements=achievements,
+        total_calories_burned=total_calories_burned
+    )
 
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
