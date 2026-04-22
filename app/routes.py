@@ -88,6 +88,29 @@ def dashboard():
 def profile():
     return render_template('profile.html')
 
+# ─── START WORKOUT ──────────────────────────────────────
+@main.route('/start-workout', methods=['GET', 'POST'])
+@login_required
+def start_workout():
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        names = request.form.getlist('exercise_name[]')
+
+        if not title:
+            flash('Workout title is required.')
+            return redirect(url_for('main.start_workout'))
+
+        if not any((n or '').strip() for n in names):
+            flash('Add at least one exercise to start a workout.')
+            return redirect(url_for('main.start_workout'))
+
+        # TODO (backend task): create Workout + Exercise rows here,
+        # then redirect to the ongoing workout page with the new id.
+        flash('Workout started! (persistence not wired yet)')
+        return redirect(url_for('main.dashboard'))
+
+    return render_template('start_workout.html')
+
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
 @login_required
