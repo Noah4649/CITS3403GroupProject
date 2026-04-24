@@ -51,27 +51,43 @@
 
             <div class="mt-4 pt-3" style="border-top: 1px solid var(--color-border);">
                 <h2 class="section-title">Your Previous Submissions</h2>
+                <button id="toggle-submissions" class="btn btn-outline-secondary w-100 mb-3">Hide Previous Submissions</button>
 
-                {% if submissions %}
-                    {% for item in submissions %}
-                        <div class="card app-card mb-3">
-                            <div class="card-body">
-                                <p class="mb-2"><strong>Type:</strong> {{ item.type|capitalize }}</p>
-                                <p class="mb-2">{{ item.message }}</p>
-                                <p class="text-muted mb-0">
-                                    {{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}
-                                </p>
+                <div id="submissions-container">
+                    {% if submissions %}
+                        {% for item in submissions %}
+                            <div class="card app-card mb-3">
+                                <div class="card-body">
+                                    <p class="mb-2"><strong>Type:</strong> {{ item.type|capitalize }}</p>
+                                    <p class="mb-2">{{ item.message }}</p>
+                                    <p class="text-muted mb-0">
+                                        {{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted mb-0">You have not submitted anything yet.</p>
-                {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">You have not submitted anything yet.</p>
+                    {% endif %}
+                </div>
             </div>
 
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('toggle-submissions').addEventListener('click', function() {
+            const container = document.getElementById('submissions-container');
+            const button = this;
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                button.textContent = 'Hide Previous Submissions';
+            } else {
+                container.style.display = 'none';
+                button.textContent = 'Show Previous Submissions';
+            }
+        });
+    </script>
 </body>
 </html>
