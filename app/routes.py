@@ -128,3 +128,30 @@ def friends_feed():
 @main.route('/password-reset')
 def password_reset():
     return render_template('password_reset.html')
+
+# ─── LEADERBOARD PAGE ───────────────────────────────────────
+@main.route('/leaderboard')
+def leaderboard():
+    return render_template(
+        'leaderboard-page.html',
+        overall_leaderboard=[
+            {"username": "UserA"},
+            {"username": "UserB"},
+            {"username": "UserC"}
+        ],
+        bench_leaderboard=[
+            {"username": "UserA", "weight_kg": 90},
+            {"username": "UserB", "weight_kg": 80},
+            {"username": "UserC", "weight_kg": 75}
+        ],
+        squat_leaderboard=[
+            {"username": "UserA", "weight_kg": 120},
+            {"username": "UserB", "weight_kg": 110},
+            {"username": "UserC", "weight_kg": 100}
+        ],
+        deadlift_leaderboard=[
+            {"username": "UserA", "weight_kg": 150},
+            {"username": "UserB", "weight_kg": 140},
+            {"username": "UserC", "weight_kg": 130}
+        ]
+    )
