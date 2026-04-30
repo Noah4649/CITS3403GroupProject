@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from app import db
-from app.models import User, Workout, Meal, Achievement
+from app.models import User, Workout, Meal, Achievement, Feedback
 
 main = Blueprint('main', __name__)
 
@@ -128,3 +128,33 @@ def friends_feed():
 @main.route('/password-reset')
 def password_reset():
     return render_template('password_reset.html')
+
+# ─── FEEDBACK ───────────────────────────────────────────
+@main.route('/feedback', methods=['GET', 'POST'])
+@login_required
+def feedback():
+    if request.method == 'POST':
+        message = request.form.get('message')
+        type_ = request.form.get('type')
+
+        if not message or not type_:
+            flash('Please complete all fields.')
+            return redirect(url_for('main.feedback'))
+
+        new_feedback = Feedback(
+            user_id=current_user.id,
+            type=type_,
+            message=message
+        )
+
+        db.session.add(new_feedback)
+        db.session.commit()
+
+        flash('Submission received!')
+        return redirect(url_for('main.feedback'))
+
+    submissions = Feedback.query.filter_by(user_id=current_user.id) \
+        .order_by(Feedback.created_at.desc()) \
+        .all()
+
+    return render_template('feedback.html', submissions=submissions)
