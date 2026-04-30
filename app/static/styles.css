@@ -157,6 +157,15 @@ a:hover {
     margin-bottom: 1rem;
 }
 
+.section-title-lg {
+    font-size: 2rem;
+}
+
+.section-title-hd {
+    font-size: 3rem;
+}
+
+
 /* ── Bootstrap Form Overrides ── */
 .form-control,
 .form-select {
@@ -467,4 +476,38 @@ textarea.form-control {
     .topbar {
         padding: 0 1rem;
     }
+}
+
+/* ── Custom table ── */
+.custom-table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: transparent;
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+    --bs-table-color: var(--color-text-muted);
+    --bs-table-striped-color: var(--color-text-muted);
+    --bs-table-hover-color: var(--color-text);
+}
+
+.custom-table th {
+    font-family: var(--font-display);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    font-weight: 700;
+    background-color: transparent;
+}
+
+.custom-table td {
+    font-family: var(--font-body);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    background-color: transparent;
+}
+
+.custom-table tbody tr:hover td {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--color-text);
 }

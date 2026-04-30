@@ -131,6 +131,7 @@ def password_reset():
 
 # ─── LEADERBOARD PAGE ───────────────────────────────────────
 @main.route('/leaderboard')
+@login_required
 def leaderboard():
     return render_template(
         'leaderboard-page.html',
