@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Workout – FitTrack</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .exercise-row {
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background-color: var(--color-surface-alt);
+            margin-bottom: 0.75rem;
+        }
+
+        .exercise-row .form-label {
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .exercise-index {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--color-primary);
+            font-size: 0.85rem;
+        }
+
+        .remove-exercise {
+            background: transparent;
+            border: 1px solid var(--color-border);
+            color: var(--color-text-muted);
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .remove-exercise:hover {
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+
+        .flash-msg {
+            background-color: var(--color-primary-glow);
+            border: 1px solid var(--color-primary);
+            color: var(--color-text);
+            padding: 0.6rem 0.9rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar navbar">
+        <span class="topbar-title navbar-brand">FitTrack</span>
+        <nav class="ms-auto d-flex align-items-center gap-2">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+            <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
+            <a href="{{ url_for('main.logout') }}" class="btn btn-outline-secondary btn-sm">Logout</a>
+        </nav>
+    </header>
+
+    <main class="main container-fluid py-4">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for m in messages %}
+                    <div class="flash-msg">{{ m }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form id="start-workout-form" method="POST" action="{{ url_for('main.start_workout') }}" novalidate>
+
+            <!-- Workout Details -->
+            <section class="card app-card mb-4">
+                <div class="card-body">
+                    <h2 class="section-title">New Workout</h2>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="title" class="form-label">Workout Title</label>
+                            <input type="text" id="title" name="title" class="form-control"
+                                   placeholder="e.g. Push Day, Morning Run" maxlength="100" required>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_public" name="is_public" value="1">
+                                <label class="form-check-label" for="is_public">Share publicly</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="2"
+                                      placeholder="Any prep notes..." maxlength="500"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Exercises -->
+            <section class="card app-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="section-title mb-0">Exercises</h2>
+                        <button type="button" id="add-exercise" class="btn btn-outline-primary btn-sm">
+                            + Add Exercise
+                        </button>
+                    </div>
+
+                    <div id="exercise-list"></div>
+
+                    <p id="no-exercises-msg" class="text-muted mb-0" hidden>No exercises added yet.</p>
+                </div>
+            </section>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Start Workout</button>
+            </div>
+
+        </form>
+
+        <template id="exercise-row-template">
+            <fieldset class="exercise-row">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="exercise-index">Exercise</span>
+                    <button type="button" class="remove-exercise">Remove</button>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="exercise_name[]" class="form-control form-control-sm"
+                               placeholder="Bench Press" maxlength="100" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Sets</label>
+                        <input type="number" name="exercise_sets[]" class="form-control form-control-sm" min="0" max="99">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Reps</label>
+                        <input type="number" name="exercise_reps[]" class="form-control form-control-sm" min="0" max="999">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" name="exercise_weight[]" class="form-control form-control-sm" min="0" step="0.5">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Duration (min)</label>
+                        <input type="number" name="exercise_duration[]" class="form-control form-control-sm" min="0" max="999">
+                    </div>
+                </div>
+            </fieldset>
+        </template>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const list = document.getElementById('exercise-list');
+        const template = document.getElementById('exercise-row-template');
+        const addBtn = document.getElementById('add-exercise');
+        const form = document.getElementById('start-workout-form');
+        const emptyMsg = document.getElementById('no-exercises-msg');
+
+        const renumber = () => {
+            const rows = list.querySelectorAll('.exercise-row');
+            rows.forEach((row, i) => {
+                const label = row.querySelector('.exercise-index');
+                if (label) label.textContent = `Exercise ${i + 1}`;
+            });
+            emptyMsg.hidden = rows.length !== 0;
+        };
+
+        const addRow = () => {
+            const clone = template.content.firstElementChild.cloneNode(true);
+            list.appendChild(clone);
+            renumber();
+            const firstInput = clone.querySelector('input[name="exercise_name[]"]');
+            if (firstInput) firstInput.focus();
+        };
+
+        addBtn.addEventListener('click', addRow);
+
+        list.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-exercise')) {
+                const row = e.target.closest('.exercise-row');
+                if (row) row.remove();
+                renumber();
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            const rows = list.querySelectorAll('.exercise-row');
+            if (rows.length === 0) {
+                e.preventDefault();
+                emptyMsg.hidden = false;
+                emptyMsg.textContent = 'Add at least one exercise before starting.';
+                return;
+            }
+            const hasName = Array.from(rows).some((r) => {
+                const input = r.querySelector('input[name="exercise_name[]"]');
+                return input && input.value.trim() !== '';
+            });
+            if (hasName === false) {
+                e.preventDefault();
+                alert('At least one exercise needs a name.');
+            }
+        });
+
+        addRow();
+    </script>
+
+</body>
+</html>
