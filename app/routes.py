@@ -296,3 +296,53 @@ def feedback():
         .all()
 
     return render_template('feedback.html', submissions=submissions)
+
+# ─── Calories ───────────────────────────────────────────
+@main.route('/calories')
+@login_required
+def calories():
+    meals = [
+    {
+        "name": "Greek yoghurt, banana and honey",
+        "calories": 420,
+        "protein": 28,
+        "carbs": 58,
+        "fats": 8,
+        "water_ml": 0
+    },
+    {
+        "name": "Chicken rice bowl",
+        "calories": 720,
+        "protein": 45,
+        "carbs": 82,
+        "fats": 18,
+        "water_ml": 500
+    },
+    {
+        "name": "Protein shake",
+        "calories": 250,
+        "protein": 30,
+        "carbs": 18,
+        "fats": 5,
+        "water_ml": 400
+    }
+    ]
+
+    total_calories_consumed = 2050
+    total_calories_burned = 420
+    net_calories = total_calories_consumed - total_calories_burned
+
+    calorie_burn_goal = 600
+    burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100)
+    calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
+
+    return render_template(
+        'calories-page.html',
+        meals=meals,
+        total_calories_consumed=total_calories_consumed,
+        total_calories_burned=total_calories_burned,
+        net_calories=net_calories,
+        calorie_burn_goal=calorie_burn_goal,
+        burn_progress=burn_progress,
+        calories_remaining=calories_remaining
+    )
