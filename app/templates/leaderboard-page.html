@@ -17,17 +17,17 @@
         </header>
 
         <main class="main container-fluid py-4">
-        <!--leaderboard header-->
-        <section class="leaderboard-header">
-            <div class="container-fluid">
-                <h1 class="section-title section-title-hd">Leaderboard</h1>
-                <p class="section-title">Look to see how your progress compares to the rest!</p>
-            </div>
-        </section>
+
+            <section class="leaderboard-header">
+                <div class="container-fluid">
+                    <h1 class="section-title section-title-hd">Leaderboard</h1>
+                    <p class="section-title">Look to see how your progress compares to the rest!</p>
+                </div>
+            </section>
 
             <div class="container">
 
-                <!-- Top leaderboard -->
+                <!-- Overall leaderboard -->
                 <section class="mb-5">
                     <div class="card app-card">
                         <div class="card-body">
@@ -48,8 +48,9 @@
                 </section>
 
                 <!-- Three smaller leaderboards -->
-                <section>
+                <section class="mb-5">
                     <div class="row g-4">
+
                         <div class="col-md-4">
                             <div class="card app-card h-100">
                                 <div class="card-body">
@@ -84,77 +85,81 @@
                             </div>
                         </div>
 
-                     <div class="col-md-4">
-                        <div class="card app-card h-100">
-                            <div class="card-body">
-                                <h3 class="section-title section-title-lg text-center">Squat</h3>
-                                <div class="table-responsive">
-                                    <table class="table text-center custom-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Rank</th>
-                                                <th>Username</th>
-                                                <th>Weight</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% if squat_leaderboard %}
-                                                {% for entry in squat_leaderboard %}
-                                                    <tr>
-                                                        <td>{{ loop.index }}</td>
-                                                        <td>{{ entry.username }}</td>
-                                                        <td>{{ entry.weight_kg }} kg</td>
-                                                    </tr>
-                                                {% endfor %}
-                                            {% else %}
+                        <div class="col-md-4">
+                            <div class="card app-card h-100">
+                                <div class="card-body">
+                                    <h3 class="section-title section-title-lg text-center">Squat</h3>
+                                    <div class="table-responsive">
+                                        <table class="table text-center custom-table">
+                                            <thead>
                                                 <tr>
-                                                    <td colspan="3">No squat data available.</td>
+                                                    <th>Rank</th>
+                                                    <th>Username</th>
+                                                    <th>Weight</th>
                                                 </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {% if squat_leaderboard %}
+                                                    {% for entry in squat_leaderboard %}
+                                                        <tr>
+                                                            <td>{{ loop.index }}</td>
+                                                            <td>{{ entry.username }}</td>
+                                                            <td>{{ entry.weight_kg }} kg</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="3">No squat data available.</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-md-4">
-                        <div class="card app-card h-100">
-                            <div class="card-body">
-                                <h3 class="section-title section-title-lg text-center">Deadlift</h3>
-                                <div class="table-responsive">
-                                    <table class="table text-center custom-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Rank</th>
-                                                <th>Username</th>
-                                                <th>Weight</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% if deadlift_leaderboard %}
-                                                {% for entry in deadlift_leaderboard %}
-                                                    <tr>
-                                                        <td>{{ loop.index }}</td>
-                                                        <td>{{ entry.username }}</td>
-                                                        <td>{{ entry.weight_kg }} kg</td>
-                                                    </tr>
-                                                {% endfor %}
-                                            {% else %}
+                        <div class="col-md-4">
+                            <div class="card app-card h-100">
+                                <div class="card-body">
+                                    <h3 class="section-title section-title-lg text-center">Deadlift</h3>
+                                    <div class="table-responsive">
+                                        <table class="table text-center custom-table">
+                                            <thead>
                                                 <tr>
-                                                    <td colspan="3">No deadlift data available.</td>
+                                                    <th>Rank</th>
+                                                    <th>Username</th>
+                                                    <th>Weight</th>
                                                 </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {% if deadlift_leaderboard %}
+                                                    {% for entry in deadlift_leaderboard %}
+                                                        <tr>
+                                                            <td>{{ loop.index }}</td>
+                                                            <td>{{ entry.username }}</td>
+                                                            <td>{{ entry.weight_kg }} kg</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="3">No deadlift data available.</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </section>
 
             </div>
         </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     </body>
 </html>
