@@ -157,6 +157,15 @@ a:hover {
     margin-bottom: 1rem;
 }
 
+.section-title-lg {
+    font-size: 2rem;
+}
+
+.section-title-hd {
+    font-size: 3rem;
+}
+
+
 /* ── Bootstrap Form Overrides ── */
 .form-control,
 .form-select {
