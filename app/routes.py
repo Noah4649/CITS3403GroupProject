@@ -357,3 +357,9 @@ def leaderboard():
 @main.route('/welcome')
 def welcome():
     return render_template('welcome-page.html')
+
+# ─── SETTINGS ───────────────────────────────────────────
+@main.route('/settings')
+@login_required
+def settings():
+    return render_template('settings.html')
