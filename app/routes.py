@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from app import db
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal
 
 main = Blueprint('main', __name__)
 
@@ -318,9 +318,17 @@ def calories():
     total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
     net_calories = total_calories_consumed - total_calories_burned
 
-    # Temporary daily goal for now
-    calorie_burn_goal = 600
-    burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100)
+    # Get the user's active calorie goal from the database
+    active_calorie_goal = Goal.query.filter_by(
+        user_id=current_user.id,
+        type='calories',
+        completed=False
+    ).first()
+
+    # Use the database goal if it exists, otherwise fall back to 600
+    calorie_burn_goal = active_calorie_goal.target if active_calorie_goal else 600
+
+    burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100) if calorie_burn_goal else 0
     calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
 
     return render_template(
