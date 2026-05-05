@@ -188,11 +188,7 @@ function setActiveNavLink() {
    ============================================================ */
 
 function logout() {
-    apiPost('/api/auth/logout', {}, function () {
-        window.location.href = '/login';
-    }, function () {
-        window.location.href = '/login';
-    });
+    window.location.href = '/logout';
 }
 
 
