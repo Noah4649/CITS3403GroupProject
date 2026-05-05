@@ -12,7 +12,7 @@ main = Blueprint('main', __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-    return redirect(url_for('main.login'))
+    return render_template('welcome-page.html')
 
 # ─── SIGNUP ─────────────────────────────────────────────
 @main.route('/signup', methods=['GET', 'POST'])
