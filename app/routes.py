@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from app import db
-from app.models import User, Workout, Meal, Achievement
+from app.models import User, Workout, Exercise, Meal, Achievement
 
 main = Blueprint('main', __name__)
 
@@ -101,7 +101,13 @@ def profile():
 def start_workout():
     if request.method == 'POST':
         title = (request.form.get('title') or '').strip()
+        notes = (request.form.get('notes') or '').strip()
+        is_public = bool(request.form.get('is_public'))
         names = request.form.getlist('exercise_name[]')
+        sets = request.form.getlist('exercise_sets[]')
+        reps = request.form.getlist('exercise_reps[]')
+        weights = request.form.getlist('exercise_weight[]')
+        durations = request.form.getlist('exercise_duration[]')
 
         if not title:
             flash('Workout title is required.')
@@ -111,9 +117,61 @@ def start_workout():
             flash('Add at least one exercise to start a workout.')
             return redirect(url_for('main.start_workout'))
 
-        # TODO (backend task): create Workout + Exercise rows here,
-        # then redirect to the ongoing workout page with the new id.
-        flash('Workout started! (persistence not wired yet)')
+        workout = Workout(
+            user_id=current_user.id,
+            title=title,
+            notes=notes,
+            is_public=is_public
+        )
+
+        total_duration = 0
+        for index, name in enumerate(names):
+            name = (name or '').strip()
+            if not name:
+                continue
+
+            sets_value = request.form.getlist('exercise_sets[]')[index] if index < len(sets) else None
+            reps_value = request.form.getlist('exercise_reps[]')[index] if index < len(reps) else None
+            weight_value = request.form.getlist('exercise_weight[]')[index] if index < len(weights) else None
+            duration_value = request.form.getlist('exercise_duration[]')[index] if index < len(durations) else None
+
+            try:
+                sets_value = int(sets_value) if sets_value else None
+            except ValueError:
+                sets_value = None
+            try:
+                reps_value = int(reps_value) if reps_value else None
+            except ValueError:
+                reps_value = None
+            try:
+                weight_value = float(weight_value) if weight_value else None
+            except ValueError:
+                weight_value = None
+            try:
+                duration_value = int(duration_value) if duration_value else None
+            except ValueError:
+                duration_value = None
+
+            if duration_value:
+                total_duration += duration_value
+
+            workout.exercises.append(Exercise(
+                name=name,
+                sets=sets_value,
+                reps=reps_value,
+                weight_kg=weight_value,
+                duration_mins=duration_value
+            ))
+
+        workout.duration_mins = total_duration or None
+        db.session.add(workout)
+        db.session.commit()
+
+        if is_public:
+            flash('Workout completed and shared publicly.')
+        else:
+            flash('Workout completed privately.')
+
         return redirect(url_for('main.dashboard'))
 
     return render_template('start_workout.html')
@@ -122,7 +180,8 @@ def start_workout():
 @main.route('/friends-feed')
 @login_required
 def friends_feed():
-    return render_template('friends_feed.html')
+    public_workouts = Workout.query.filter_by(is_public=True).order_by(Workout.date.desc()).all()
+    return render_template('friends_feed.html', current_username=current_user.username, public_workouts=public_workouts)
 
 # ─── PASSWORD RESET ─────────────────────────────────────
 @main.route('/password-reset')
