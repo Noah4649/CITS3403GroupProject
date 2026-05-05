@@ -351,7 +351,38 @@ def calories():
 @main.route('/leaderboard')
 @login_required
 def leaderboard():
-    return render_template('leaderboard-page.html')
+    # Overall: users ranked by total calories burned across all workouts
+    overall_leaderboard = db.session.query(User).join(Workout).group_by(User.id).order_by(
+        db.func.sum(Workout.calories_burned).desc()
+    ).limit(10).all()
+
+    # Bench press: users ranked by their heaviest bench press
+    bench_leaderboard = db.session.query(
+        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        db.func.lower(Exercise.name).like('%bench press%')
+    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+
+    # Squat: users ranked by their heaviest squat
+    squat_leaderboard = db.session.query(
+        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        db.func.lower(Exercise.name).like('%squat%')
+    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+
+    # Deadlift: users ranked by their heaviest deadlift
+    deadlift_leaderboard = db.session.query(
+        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        db.func.lower(Exercise.name).like('%deadlift%')
+    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+
+    return render_template('leaderboard-page.html',
+        overall_leaderboard=overall_leaderboard,
+        bench_leaderboard=bench_leaderboard,
+        squat_leaderboard=squat_leaderboard,
+        deadlift_leaderboard=deadlift_leaderboard
+    )
 
 # ─── Welcome ────────────────────────────────────────────
 @main.route('/welcome')
