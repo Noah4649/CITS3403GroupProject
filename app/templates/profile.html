@@ -1,242 +1,136 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Profile – FitTrack</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            font-size: 2.2rem;
-        }
+{% extends "base.html" %}
 
-        .stat-value {
-            font-family: var(--font-display);
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--color-primary);
-            line-height: 1;
-        }
+{% block title %}Profile – FitTrack{% endblock %}
 
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--color-text-muted);
-            margin-top: 0.3rem;
-        }
+{% block content %}
 
-        .stat-divider {
-            border-left: 1px solid var(--color-border);
-        }
-
-        .achievement-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.85rem;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .achievement-item:last-child {
-            border-bottom: none;
-        }
-
-        .achievement-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-sm);
-            background-color: var(--color-primary-glow);
-            border: 1px solid var(--color-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .achievement-title {
-            font-family: var(--font-display);
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--color-text);
-        }
-
-        .achievement-desc {
-            font-size: 0.82rem;
-            color: var(--color-text-muted);
-            margin-top: 0.1rem;
-        }
-
-        .metric-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid var(--color-border);
-            font-size: 0.9rem;
-        }
-
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-
-        .metric-row .label {
-            color: var(--color-text-muted);
-        }
-
-        .metric-row .value {
-            color: var(--color-text);
-            font-weight: 500;
-        }
-    </style>
-</head>
-<body>
-
-    <header class="topbar navbar">
-        <span class="topbar-title navbar-brand">FitTrack</span>
-        <nav class="ms-auto d-flex align-items-center gap-2">
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
-            <a href="{{ url_for('main.friends_feed') }}" class="btn btn-outline-secondary btn-sm">Friends</a>
-            <a href="{{ url_for('main.logout') }}" class="btn btn-outline-secondary btn-sm">Logout</a>
-        </nav>
-    </header>
-
-    <main class="main container-fluid py-4">
-
-        <!-- Profile Hero Card -->
-        <section class="card app-card mb-4">
-            <div class="card-body">
-                <div class="d-flex align-items-center gap-4 flex-wrap">
-                    <div class="avatar-placeholder profile-avatar">
-                        {{ current_user.username[0].upper() }}
-                    </div>
-                    <div class="flex-grow-1">
-                        <h1 class="section-title mb-1" style="font-size: 1.6rem;">{{ current_user.username }}</h1>
-                        <p class="mb-1" style="color: var(--color-text-muted); font-size: 0.9rem;">{{ current_user.email }}</p>
-                        <p class="mb-0" style="color: var(--color-text-faint); font-size: 0.82rem;">
-                            Member since {{ current_user.created_at.strftime('%B %Y') }}
-                        </p>
-                        {% if current_user.bio %}
-                            <p class="mt-2 mb-0" style="font-size: 0.92rem; color: var(--color-text-muted);">{{ current_user.bio }}</p>
-                        {% else %}
-                            <p class="mt-2 mb-0" style="font-size: 0.88rem; color: var(--color-text-faint); font-style: italic;">No bio set.</p>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <button class="btn btn-outline-primary btn-sm">Edit Profile</button>
-                    </div>
+    <!-- Profile Hero Card -->
+    <section class="card app-card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="avatar-placeholder profile-avatar">
+                    {{ current_user.username[0].upper() }}
+                </div>
+                <div class="flex-grow-1">
+                    <h1 class="section-title mb-1" style="font-size: 1.6rem;">{{ current_user.username }}</h1>
+                    <p class="mb-1" style="color: var(--color-text-muted); font-size: 0.9rem;">{{ current_user.email }}</p>
+                    <p class="mb-0" style="color: var(--color-text-faint); font-size: 0.82rem;">
+                        Member since {{ current_user.created_at.strftime('%B %Y') }}
+                    </p>
+                    {% if current_user.bio %}
+                        <p class="mt-2 mb-0" style="font-size: 0.92rem; color: var(--color-text-muted);">{{ current_user.bio }}</p>
+                    {% else %}
+                        <p class="mt-2 mb-0" style="font-size: 0.88rem; color: var(--color-text-faint); font-style: italic;">No bio set.</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm">Edit Profile</button>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Stats Row -->
-        <section class="card app-card mb-4">
-            <div class="card-body">
-                <h2 class="section-title">Activity Summary</h2>
-                <div class="row text-center g-0">
-                    <div class="col-4">
-                        <div class="stat-value">{{ workouts | length }}</div>
-                        <div class="stat-label">Workouts Logged</div>
-                    </div>
-                    <div class="col-4 stat-divider">
-                        <div class="stat-value">{{ total_calories_burned | int }}</div>
-                        <div class="stat-label">Calories Burned</div>
-                    </div>
-                    <div class="col-4 stat-divider">
-                        <div class="stat-value">{{ achievements | length }}</div>
-                        <div class="stat-label">Achievements</div>
-                    </div>
+    <!-- Stats Row -->
+    <section class="card app-card mb-4">
+        <div class="card-body">
+            <h2 class="section-title">Activity Summary</h2>
+            <div class="row text-center g-0">
+                <div class="col-4">
+                    <div class="stat-value">{{ workouts | length }}</div>
+                    <div class="stat-label">Workouts Logged</div>
+                </div>
+                <div class="col-4 stat-divider">
+                    <div class="stat-value">{{ total_calories_burned | int }}</div>
+                    <div class="stat-label">Calories Burned</div>
+                </div>
+                <div class="col-4 stat-divider">
+                    <div class="stat-value">{{ achievements | length }}</div>
+                    <div class="stat-label">Achievements</div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4">
 
-            <!-- Body Metrics -->
-            <div class="col-md-6">
-                <section class="card app-card h-100">
-                    <div class="card-body">
-                        <h2 class="section-title">Body Metrics &amp; Goal</h2>
-                        <div class="metric-row">
-                            <span class="label">Weight</span>
-                            <span class="value">
-                                {% if current_user.weight %}{{ current_user.weight }} kg{% else %}Not set{% endif %}
-                            </span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="label">Height</span>
-                            <span class="value">
-                                {% if current_user.height %}{{ current_user.height }} cm{% else %}Not set{% endif %}
-                            </span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="label">Current Goal</span>
-                            <span class="value">{{ current_user.goal or 'Not set' }}</span>
-                        </div>
+        <!-- Body Metrics -->
+        <div class="col-md-6">
+            <section class="card app-card h-100">
+                <div class="card-body">
+                    <h2 class="section-title">Body Metrics &amp; Goal</h2>
+                    <div class="metric-row">
+                        <span class="label">Weight</span>
+                        <span class="value">
+                            {% if current_user.weight %}{{ current_user.weight }} kg{% else %}Not set{% endif %}
+                        </span>
                     </div>
-                </section>
-            </div>
-
-            <!-- Recent Workouts -->
-            <div class="col-md-6">
-                <section class="card app-card h-100">
-                    <div class="card-body">
-                        <h2 class="section-title">Recent Workouts</h2>
-                        {% if workouts %}
-                            <ul class="list-unstyled mb-0">
-                                {% for workout in workouts[-5:] | reverse %}
-                                    <li class="metric-row">
-                                        <span class="label">{{ workout.title }}</span>
-                                        <span class="value" style="font-size: 0.82rem; color: var(--color-text-muted);">
-                                            {{ workout.date.strftime('%d %b') }}
-                                            {% if workout.duration_mins %}&nbsp;&middot;&nbsp;{{ workout.duration_mins }} min{% endif %}
-                                        </span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-muted mb-0">No workouts logged yet.</p>
-                        {% endif %}
+                    <div class="metric-row">
+                        <span class="label">Height</span>
+                        <span class="value">
+                            {% if current_user.height %}{{ current_user.height }} cm{% else %}Not set{% endif %}
+                        </span>
                     </div>
-                </section>
-            </div>
-
+                    <div class="metric-row">
+                        <span class="label">Current Goal</span>
+                        <span class="value">{{ current_user.goal or 'Not set' }}</span>
+                    </div>
+                </div>
+            </section>
         </div>
 
-        <!-- Achievements -->
-        <section class="card app-card">
-            <div class="card-body">
-                <h2 class="section-title">Achievements</h2>
-                {% if achievements %}
-                    <div id="achievements-list">
-                        {% for achievement in achievements %}
-                            <article class="achievement-item">
-                                <div class="achievement-icon">
-                                    {{ achievement.badge_icon or '🏅' }}
+        <!-- Recent Workouts -->
+        <div class="col-md-6">
+            <section class="card app-card h-100">
+                <div class="card-body">
+                    <h2 class="section-title">Recent Workouts</h2>
+                    {% if workouts %}
+                        <ul class="list-unstyled mb-0">
+                            {% for workout in workouts[-5:] | reverse %}
+                                <li class="metric-row">
+                                    <span class="label">{{ workout.title }}</span>
+                                    <span class="value" style="font-size: 0.82rem; color: var(--color-text-muted);">
+                                        {{ workout.date.strftime('%d %b') }}
+                                        {% if workout.duration_mins %}&nbsp;&middot;&nbsp;{{ workout.duration_mins }} min{% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No workouts logged yet.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <!-- Achievements -->
+    <section class="card app-card">
+        <div class="card-body">
+            <h2 class="section-title">Achievements</h2>
+            {% if achievements %}
+                <div id="achievements-list">
+                    {% for achievement in achievements %}
+                        <article class="achievement-item">
+                            <div class="achievement-icon">
+                                {{ achievement.badge_icon or '🏅' }}
+                            </div>
+                            <div>
+                                <div class="achievement-title">{{ achievement.title }}</div>
+                                {% if achievement.description %}
+                                    <div class="achievement-desc">{{ achievement.description }}</div>
+                                {% endif %}
+                                <div style="font-size: 0.78rem; color: var(--color-text-faint); margin-top: 0.2rem;">
+                                    Earned {{ achievement.earned_at.strftime('%d %b %Y') }}
                                 </div>
-                                <div>
-                                    <div class="achievement-title">{{ achievement.title }}</div>
-                                    {% if achievement.description %}
-                                        <div class="achievement-desc">{{ achievement.description }}</div>
-                                    {% endif %}
-                                    <div style="font-size: 0.78rem; color: var(--color-text-faint); margin-top: 0.2rem;">
-                                        Earned {{ achievement.earned_at.strftime('%d %b %Y') }}
-                                    </div>
-                                </div>
-                            </article>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No achievements yet — keep training!</p>
-                {% endif %}
-            </div>
-        </section>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No achievements yet — keep training!</p>
+            {% endif %}
+        </div>
+    </section>
 
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+{% endblock %}
