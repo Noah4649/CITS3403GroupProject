@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Workout History – FitTrack{% endblock %}
+
+{% block content %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <section class="card app-card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="section-subtitle text-muted mb-2">Total Workouts</h5>
+                    <p class="stats-value">{{ total_workouts }}</p>
+                    <small class="text-muted">All time</small>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-4">
+            <section class="card app-card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="section-subtitle text-muted mb-2">Total Calories Burned</h5>
+                    <p class="stats-value">{{ total_calories_burned|int }}</p>
+                    <small class="text-muted">kcal</small>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-4">
+            <section class="card app-card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="section-subtitle text-muted mb-2">Total Duration</h5>
+                    <p class="stats-value">{{ total_duration }}</p>
+                    <small class="text-muted">minutes</small>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <section class="card app-card workout-history-card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title mb-0">Your Workouts</h2>
+                <a href="{{ url_for('main.start_workout') }}" class="btn btn-primary btn-sm">
+                    <span>+ New Workout</span>
+                </a>
+            </div>
+
+            {% if workouts %}
+                <div class="workout-list">
+                    {% for workout in workouts %}
+                        <div class="workout-item-card mb-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h4 class="workout-title">{{ workout.title }}</h4>
+                                    <p class="workout-date text-muted mb-2">
+                                        <small>{{ workout.date.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                                    </p>
+                                    {% if workout.notes %}
+                                        <p class="workout-notes">
+                                            <small class="text-muted">{{ workout.notes }}</small>
+                                        </p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="workout-stats d-flex justify-content-around align-items-center">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Duration</span>
+                                            <span class="stat-value">
+                                                {% if workout.duration_mins %}
+                                                    {{ workout.duration_mins }} min
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </span>
+                                        </div>
+
+                                        <div class="stat-item">
+                                            <span class="stat-label">Calories</span>
+                                            <span class="stat-value">
+                                                {% if workout.calories_burned %}
+                                                    {{ workout.calories_burned|int }} kcal
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </span>
+                                        </div>
+
+                                        <a href="{{ url_for('main.delete_workout', workout_id=workout.id) }}"
+                                           class="btn btn-outline-danger btn-sm"
+                                           onclick="return confirm('Are you sure you want to delete this workout?');">
+                                           Delete
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if workout.exercises %}
+                                <div class="exercises-list mt-3 pt-3 border-top">
+                                    <h6 class="text-muted mb-2">Exercises:</h6>
+                                    <ul class="list-unstyled">
+                                        {% for exercise in workout.exercises %}
+                                            <li class="exercise-item d-flex justify-content-between">
+                                                <span>{{ exercise.name }}</span>
+                                                <span class="exercise-details text-muted">
+                                                    {% if exercise.sets and exercise.reps %}
+                                                        {{ exercise.sets }}x{{ exercise.reps }}
+                                                    {% endif %}
+                                                    {% if exercise.weight_kg %}
+                                                        {{ exercise.weight_kg }} kg
+                                                    {% endif %}
+                                                    {% if exercise.duration_mins %}
+                                                        {{ exercise.duration_mins }} min
+                                                    {% endif %}
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state text-center py-5">
+                    <p class="text-muted mb-3">No workouts logged yet.</p>
+                    <a href="{{ url_for('main.start_workout') }}" class="btn btn-primary">Start Your First Workout</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">View Profile</a>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
