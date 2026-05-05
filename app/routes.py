@@ -346,3 +346,14 @@ def calories():
         burn_progress=burn_progress,
         calories_remaining=calories_remaining
     )
+
+# ─── Leaderboard ────────────────────────────────────────
+@main.route('/leaderboard')
+@login_required
+def leaderboard():
+    return render_template('leaderboard-page.html')
+
+# ─── Welcome ────────────────────────────────────────────
+@main.route('/welcome')
+def welcome():
+    return render_template('welcome-page.html')
