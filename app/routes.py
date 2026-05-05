@@ -301,37 +301,24 @@ def feedback():
 @main.route('/calories')
 @login_required
 def calories():
-    meals = [
-    {
-        "name": "Greek yoghurt, banana and honey",
-        "calories": 420,
-        "protein": 28,
-        "carbs": 58,
-        "fats": 8,
-        "water_ml": 0
-    },
-    {
-        "name": "Chicken rice bowl",
-        "calories": 720,
-        "protein": 45,
-        "carbs": 82,
-        "fats": 18,
-        "water_ml": 500
-    },
-    {
-        "name": "Protein shake",
-        "calories": 250,
-        "protein": 30,
-        "carbs": 18,
-        "fats": 5,
-        "water_ml": 400
-    }
-    ]
+    today = date.today()
 
-    total_calories_consumed = 2050
-    total_calories_burned = 420
+    # Get today's meals from the database for the logged-in user
+    meals = Meal.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Meal.date) == today
+    ).all()
+
+    # Get today's workouts from the database for the logged-in user
+    workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Workout.date) == today
+    ).all()
+
+    # Calculate totals from database records
+    total_calories_consumed = sum(meal.calories or 0 for meal in meals)
+    total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
     net_calories = total_calories_consumed - total_calories_burned
 
+    # Temporary daily goal for now
     calorie_burn_goal = 600
     burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100)
     calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
