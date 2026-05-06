@@ -124,16 +124,81 @@
             </div>
         </section>
 
-        <!-- Weekly chart placeholder -->
+        <!-- Weekly calories chart -->
         <section class="mb-4">
             <div class="card app-card h-100 text-center">
                 <div class="card-body">
-                    <h2 class="section-title section-title-lg text-center">Calories Burnt This Week</h2>
-                    <canvas id="caloriesChart"></canvas>
+                    <h2 class="section-title section-title-lg text-center">
+                        Calories Burnt: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
+                    </h2>
+
+                    <form method="GET" action="{{ url_for('main.calories') }}" class="mb-3">
+                        <label for="week" class="form-label">Select week</label>
+
+                        <select name="week" id="week" class="form-select" onchange="this.form.submit()">
+                            <option value="this" {% if selected_week == 'this' %}selected{% endif %}>This week</option>
+                            <option value="last" {% if selected_week == 'last' %}selected{% endif %}>Last week</option>
+                            <option value="two_weeks_ago" {% if selected_week == 'two_weeks_ago' %}selected{% endif %}>Two weeks ago</option>
+                        </select>
+                    </form>
+
+                    <div style="height: 320px;">
+                        <canvas id="caloriesChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
 
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const caloriesChart = document.getElementById('caloriesChart');
+
+        if (caloriesChart) {
+            new Chart(caloriesChart, {
+                type: 'line',
+                data: {
+                    labels: {{ week_labels | tojson }},
+                    datasets: [{
+                        label: 'Calories Burned',
+                        data: {{ week_burned_data | tojson }},
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#e8eaf0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.08)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#e8eaf0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.08)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e8eaf0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 
 {% endblock %}

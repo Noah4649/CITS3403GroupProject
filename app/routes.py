@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date, timedelta
 from app import db
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal
 
@@ -331,6 +331,37 @@ def calories():
     burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100) if calorie_burn_goal else 0
     calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
 
+
+    # Weekly chart data: Monday to Sunday
+    selected_week = request.args.get('week', 'this')
+
+    start_of_this_week = today - timedelta(days=today.weekday())  # Monday
+
+    if selected_week == 'last':
+        week_start = start_of_this_week - timedelta(days=7)
+    elif selected_week == 'two_weeks_ago':
+        week_start = start_of_this_week - timedelta(days=14)
+    else:
+        selected_week = 'this'
+        week_start = start_of_this_week
+
+    week_end = week_start + timedelta(days=6)  # Sunday
+
+    week_labels = []
+    week_burned_data = []
+
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+
+        daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Workout.date) == day
+        ).all()
+
+        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+
+        week_labels.append(day.strftime('%a'))
+        week_burned_data.append(daily_total_burned)
+
     return render_template(
         'calories-page.html',
         meals=meals,
@@ -339,7 +370,12 @@ def calories():
         net_calories=net_calories,
         calorie_burn_goal=calorie_burn_goal,
         burn_progress=burn_progress,
-        calories_remaining=calories_remaining
+        calories_remaining=calories_remaining,
+        selected_week=selected_week,
+        week_start=week_start,
+        week_end=week_end,
+        week_labels=week_labels,
+        week_burned_data=week_burned_data
     )
 
 # ─── Leaderboard ────────────────────────────────────────
