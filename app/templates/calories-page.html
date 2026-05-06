@@ -153,10 +153,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         const caloriesChart = document.getElementById('caloriesChart');
 
         if (caloriesChart) {
+            const styles = getComputedStyle(document.documentElement);
+
+            const chartLineColor = styles.getPropertyValue('--chart-calories-line').trim();
+            const chartFillColor = styles.getPropertyValue('--chart-calories-fill').trim();
+            const chartGridColor = styles.getPropertyValue('--chart-grid-line').trim();
+            const chartTextColor = styles.getPropertyValue('--color-text').trim();
+
             new Chart(caloriesChart, {
                 type: 'line',
                 data: {
@@ -164,7 +173,13 @@
                     datasets: [{
                         label: 'Calories Burned',
                         data: {{ week_burned_data | tojson }},
-                        borderWidth: 1
+                        borderWidth: 2,
+                        tension: 0,
+                        fill: true,
+                        backgroundColor: chartFillColor,
+                        borderColor: chartLineColor,
+                        pointBackgroundColor: chartLineColor,
+                        pointBorderColor: chartLineColor
                     }]
                 },
                 options: {
@@ -174,25 +189,25 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                color: '#e8eaf0'
+                                color: chartTextColor
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.08)'
+                                color: chartGridColor
                             }
                         },
                         x: {
                             ticks: {
-                                color: '#e8eaf0'
+                                color: chartTextColor
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.08)'
+                                color: chartGridColor
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
-                                color: '#e8eaf0'
+                                color: chartTextColor
                             }
                         }
                     }

@@ -512,6 +512,17 @@ textarea.form-control {
     color: var(--color-text);
 }
 
+/* ── Calories Chart ── */
+.calories-chart-wrapper {
+    height: 320px;
+}
+
+:root {
+    --chart-calories-line: #3b8eea;
+    --chart-calories-fill: rgba(59, 142, 234, 0.15);
+    --chart-grid-line: rgba(255, 255, 255, 0.08);
+}
+
 /* ── Welcome Page ── */
 .welcome {
     min-height: calc(100vh - 60px);
