@@ -671,3 +671,14 @@ textarea.form-control {
     font-size: 0.88rem;
     margin-bottom: 1rem;
 }
+
+/* ── Leaderboard Page ── */
+.leaderboard-list-scroll {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.leaderboard-table-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+}
