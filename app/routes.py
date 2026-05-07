@@ -3,7 +3,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from app import db
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Report
+from flask import abort
 
 main = Blueprint('main', __name__)
 
@@ -394,3 +395,20 @@ def welcome():
 @login_required
 def settings():
     return render_template('settings.html')
+
+# ─── ADMIN ──────────────────────────────────────────────
+@main.route('/admin')
+@login_required
+def admin():
+    if not current_user.is_admin:
+        abort(403)
+
+    users = User.query.order_by(User.created_at.desc()).all()
+    reports = Report.query.order_by(Report.created_at.desc()).all()
+    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+
+    return render_template('admin.html',
+        users=users,
+        reports=reports,
+        feedbacks=feedbacks
+    )

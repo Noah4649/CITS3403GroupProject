@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Admin – FitTrack{% endblock %}
+
+{% block content %}
+
+    <section class="mb-4">
+        <h1 class="section-title section-title-hd">Admin Panel</h1>
+        <p style="color: var(--color-text-muted);">Manage users, reports and feedback.</p>
+    </section>
+
+    <!-- ─── STATS SUMMARY ─────────────────────────────────── -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <div class="stat-value">{{ users | length }}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <div class="stat-value">{{ reports | length }}</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <div class="stat-value">{{ feedbacks | length }}</div>
+                    <div class="stat-label">Total Feedback</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── USERS TABLE ───────────────────────────────────── -->
+    <section class="card app-card mb-5">
+        <div class="card-body">
+            <h2 class="section-title">All Users</h2>
+            <div class="table-responsive">
+                <table class="table custom-table text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Joined</th>
+                            <th>Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if users %}
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                            <span style="color: var(--color-primary); font-weight: 600;">Yes</span>
+                                        {% else %}
+                                            <span style="color: var(--color-text-faint);">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5">No users found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── REPORTS TABLE ─────────────────────────────────── -->
+    <section class="card app-card mb-5">
+        <div class="card-body">
+            <h2 class="section-title">User Reports</h2>
+            <div class="table-responsive">
+                <table class="table custom-table text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Reporter ID</th>
+                            <th>Reported User ID</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if reports %}
+                            {% for report in reports %}
+                                <tr>
+                                    <td>{{ report.id }}</td>
+                                    <td>{{ report.reporter_id }}</td>
+                                    <td>{{ report.reported_user_id }}</td>
+                                    <td>{{ report.reason or '—' }}</td>
+                                    <td>
+                                        {% if report.status == 'open' %}
+                                            <span style="color: #ff6b6b; font-weight: 600;">Open</span>
+                                        {% else %}
+                                            <span style="color: var(--color-primary); font-weight: 600;">Resolved</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ report.created_at.strftime('%d %b %Y') }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">No reports found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FEEDBACK TABLE ────────────────────────────────── -->
+    <section class="card app-card mb-5">
+        <div class="card-body">
+            <h2 class="section-title">Feedback & Complaints</h2>
+            <div class="table-responsive">
+                <table class="table custom-table text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User ID</th>
+                            <th>Type</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if feedbacks %}
+                            {% for item in feedbacks %}
+                                <tr>
+                                    <td>{{ item.id }}</td>
+                                    <td>{{ item.user_id }}</td>
+                                    <td>{{ item.type | capitalize }}</td>
+                                    <td style="text-align: left;">{{ item.message }}</td>
+                                    <td>{{ item.created_at.strftime('%d %b %Y') }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5">No feedback found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}
