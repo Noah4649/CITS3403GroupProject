@@ -418,6 +418,21 @@ def add_meal():
         db.session.add(meal)
         db.session.commit()
 
+        # Recalculate today's totals after adding the meal
+        today = date.today()
+
+        meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == today
+        ).all()
+
+        workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Workout.date) == today
+        ).all()
+
+        total_calories_consumed = sum(meal.calories or 0 for meal in meals)
+        total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
+        net_calories = total_calories_consumed - total_calories_burned
+
         return jsonify({
             'success': True,
             'message': 'Meal added successfully.',
@@ -429,6 +444,11 @@ def add_meal():
                 'carbs': meal.carbs or 0,
                 'fats': meal.fats or 0,
                 'water_ml': meal.water_ml or 0
+            },
+            'totals': {
+                'total_calories_consumed': total_calories_consumed,
+                'total_calories_burned': total_calories_burned,
+                'net_calories': net_calories
             }
         }), 201
 

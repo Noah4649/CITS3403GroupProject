@@ -53,7 +53,9 @@
                     <div class="card app-card h-100 text-center">
                         <div class="card-body">
                             <h3 class="section-title h5 mb-2">Calories Consumed</h3>
-                            <p class="section-title section-title-lg fw-bold mb-1">{{ total_calories_consumed }}</p>
+                            <p id="total-calories-consumed" class="section-title section-title-lg fw-bold mb-1">
+                                {{ total_calories_consumed }}
+                            </p>
                             <p class="section-title text-muted mb-0 text-center">kcal today</p>
                         </div>
                     </div>
@@ -73,7 +75,9 @@
                     <div class="card app-card h-100 text-center">
                         <div class="card-body">
                             <h3 class="section-title h5 mb-2">Net Calories</h3>
-                            <p class="section-title section-title-lg fw-bold mb-1">{{ net_calories }}</p>
+                            <p id="net-calories" class="section-title section-title-lg fw-bold mb-1">
+                                {{ net_calories }}
+                            </p>
                             <p class="section-title text-muted mb-0 text-center">consumed after burn</p>
                         </div>
                     </div>
