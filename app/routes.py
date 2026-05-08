@@ -1,6 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+import hashlib
+import hmac
 from datetime import date, timedelta
 from app import db
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
@@ -316,10 +319,73 @@ def friends_feed():
     return render_template('friends_feed.html')
 
 # ─── PASSWORD RESET ─────────────────────────────────────
+def password_reset_fingerprint(user):
+    """
+    Creates a safe fingerprint of the user's current password hash.
+
+    The token stores this fingerprint, not the actual password hash.
+    If the password changes, the fingerprint changes too, which makes old
+    password reset links stop working.
+    """
+    secret_key = current_app.config['SECRET_KEY']
+    value = f'{user.password_hash}{secret_key}'.encode('utf-8')
+    return hashlib.sha256(value).hexdigest()
+
+
+def generate_password_reset_token(user):
+    """
+    Creates a signed password reset token for one specific user.
+
+    The token contains the user ID and a fingerprint of the user's current
+    password hash. Flask signs the token, so if someone edits it, it becomes
+    invalid.
+    """
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    token_data = {
+        'user_id': user.id,
+        'password_fingerprint': password_reset_fingerprint(user)
+    }
+
+    return serializer.dumps(token_data, salt='password-reset-salt')
+
+
+def verify_password_reset_token(token, max_age=1800):
+    """
+    Checks whether a password reset token is valid and not expired.
+
+    max_age=1800 means the reset link expires after 30 minutes.
+    Returns the matching User if valid, otherwise returns None.
+    """
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        token_data = serializer.loads(
+            token,
+            salt='password-reset-salt',
+            max_age=max_age
+        )
+    except (SignatureExpired, BadSignature):
+        return None
+
+    user = User.query.get(token_data.get('user_id'))
+
+    if not user:
+        return None
+
+    expected_fingerprint = password_reset_fingerprint(user)
+    token_fingerprint = token_data.get('password_fingerprint', '')
+
+    if not hmac.compare_digest(token_fingerprint, expected_fingerprint):
+        return None
+
+    return user
+
+
 @main.route('/password-reset', methods=['GET', 'POST'])
 def password_reset():
     if request.method == 'POST':
-        email = (request.form.get('email') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
 
         if not email:
             flash('Please enter your email address.', 'danger')
@@ -327,31 +393,30 @@ def password_reset():
 
         user = User.query.filter_by(email=email).first()
 
-        if not user:
-            flash('No account was found with that email address.', 'danger')
-            return redirect(url_for('main.password_reset'))
+        # SECURITY NOTE:
+        # Use the same message whether the email exists or not.
+        # This prevents people from testing random emails to discover accounts.
+        if user:
+            token = generate_password_reset_token(user)
+            reset_url = url_for('main.password_reset_new', token=token, _external=True)
 
-        # Store the user ID temporarily so the next page knows whose password to update.
-        # This keeps the simplified project flow working without setting up email tokens.
-        session['password_reset_user_id'] = user.id
-        return redirect(url_for('main.password_reset_new'))
+            # DEVELOPMENT ONLY:
+            # In a real app this link would be emailed to the user.
+            # For this project, copy this URL from the Flask terminal while testing.
+            print(f'Password reset link for {user.email}: {reset_url}')
+
+        flash('If that email is registered, a password reset link has been generated.', 'info')
+        return redirect(url_for('main.password_reset'))
 
     return render_template('password_reset.html')
 
 
-@main.route('/password-reset/new', methods=['GET', 'POST'])
-def password_reset_new():
-    user_id = session.get('password_reset_user_id')
-
-    if not user_id:
-        flash('Please enter your email address before setting a new password.', 'danger')
-        return redirect(url_for('main.password_reset'))
-
-    user = User.query.get(user_id)
+@main.route('/password-reset/<token>', methods=['GET', 'POST'])
+def password_reset_new(token):
+    user = verify_password_reset_token(token)
 
     if not user:
-        session.pop('password_reset_user_id', None)
-        flash('Password reset session expired. Please try again.', 'danger')
+        flash('This password reset link is invalid or has expired.', 'danger')
         return redirect(url_for('main.password_reset'))
 
     if request.method == 'POST':
@@ -360,20 +425,19 @@ def password_reset_new():
 
         if not password or not confirm_password:
             flash('Please fill in both password fields.', 'danger')
-            return redirect(url_for('main.password_reset_new'))
+            return redirect(url_for('main.password_reset_new', token=token))
 
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
-            return redirect(url_for('main.password_reset_new'))
+            return redirect(url_for('main.password_reset_new', token=token))
 
         user.password_hash = generate_password_hash(password)
         db.session.commit()
 
-        session.pop('password_reset_user_id', None)
         flash('Password reset successful. Please log in with your new password.', 'success')
         return redirect(url_for('main.login'))
 
-    return render_template('password_reset_new.html')
+    return render_template('password_reset_new.html', token=token)
 
 # ─── FEEDBACK ───────────────────────────────────────────
 @main.route('/feedback', methods=['GET', 'POST'])
