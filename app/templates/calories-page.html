@@ -39,7 +39,7 @@
                     </div>
 
                     <p class="section-title text-muted mt-2 mb-0 text-center">
-                        {{ calories_remaining }} kcal remaining to hit today's goal.
+                        {{ calories_remaining }} kcal remaining to complete your goal.
                     </p>
                 </div>
             </div>
@@ -88,6 +88,72 @@
                 <div class="card-body">
                     <h2 class="section-title section-title-lg text-center">Today's Meals</h2>
 
+                    <!-- AJAX add meal form -->
+                    <form id="add-meal-form" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="meal-name" class="form-label">Meal name</label>
+                                <input type="text"
+                                       id="meal-name"
+                                       class="form-control"
+                                       placeholder="e.g. Chicken rice bowl"
+                                       required>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-calories" class="form-label">Calories</label>
+                                <input type="number"
+                                       id="meal-calories"
+                                       class="form-control"
+                                       min="1"
+                                       placeholder ="0"
+                                       required>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-protein" class="form-label">Protein</label>
+                                <input type="number"
+                                       id="meal-protein"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-carbs" class="form-label">Carbs</label>
+                                <input type="number"
+                                       id="meal-carbs"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-fats" class="form-label">Fats</label>
+                                <input type="number"
+                                       id="meal-fats"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="meal-water" class="form-label">Water ml</label>
+                                <input type="number"
+                                       id="meal-water"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add Meal
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table text-center custom-table">
                             <thead>
@@ -100,7 +166,7 @@
                                     <th>Water</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="meals-table-body">
                                 {% if meals %}
                                     {% for meal in meals %}
                                         <tr>
@@ -113,7 +179,7 @@
                                         </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
+                                    <tr id="no-meals-row">
                                         <td colspan="6">No meals logged today.</td>
                                     </tr>
                                 {% endif %}
@@ -142,7 +208,7 @@
                         </select>
                     </form>
 
-                    <div style="height: 320px;">
+                    <div class="calories-chart-wrapper">
                         <canvas id="caloriesChart"></canvas>
                     </div>
                 </div>
@@ -150,8 +216,9 @@
         </section>
 
     </div>
+{% endblock %}
 
-
+{% block extra_scripts %}
     <!-- Calories Burnt Graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -163,6 +230,4 @@
     </script>
 
     <script src="{{ url_for('static', filename='calories.js') }}"></script>
-
-
 {% endblock %}

@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from app import db
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal
 
@@ -377,6 +377,69 @@ def calories():
         week_labels=week_labels,
         week_burned_data=week_burned_data
     )
+
+# ─── ADD MEAL API ───────────────────────────────────────
+@main.route('/api/add-meal', methods=['POST'])
+@login_required
+def add_meal():
+    try:
+        data = request.get_json()
+
+        name = (data.get('name') or '').strip()
+        calories = float(data.get('calories') or 0)
+        protein = float(data.get('protein') or 0)
+        carbs = float(data.get('carbs') or 0)
+        fats = float(data.get('fats') or 0)
+        water_ml = float(data.get('water_ml') or 0)
+
+        if not name:
+            return jsonify({
+                'success': False,
+                'message': 'Meal name is required.'
+            }), 400
+
+        if calories <= 0:
+            return jsonify({
+                'success': False,
+                'message': 'Calories must be greater than 0.'
+            }), 400
+
+        meal = Meal(
+            user_id=current_user.id,
+            name=name,
+            calories=calories,
+            protein=protein,
+            carbs=carbs,
+            fats=fats,
+            water_ml=water_ml,
+            date=datetime.now()
+        )
+
+        db.session.add(meal)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Meal added successfully.',
+            'meal': {
+                'id': meal.id,
+                'name': meal.name,
+                'calories': meal.calories,
+                'protein': meal.protein or 0,
+                'carbs': meal.carbs or 0,
+                'fats': meal.fats or 0,
+                'water_ml': meal.water_ml or 0
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding meal: {e}")
+
+        return jsonify({
+            'success': False,
+            'message': 'An error occurred while adding the meal.'
+        }), 500
 
 # ─── Leaderboard ────────────────────────────────────────
 @main.route('/leaderboard')
