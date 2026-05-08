@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, timedelta
@@ -49,7 +49,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password_hash, password):
-            flash('Invalid email or password.')
+            flash('Invalid email or password.', 'danger')
             return redirect(url_for('main.login'))
 
         login_user(user)
@@ -316,9 +316,64 @@ def friends_feed():
     return render_template('friends_feed.html')
 
 # ─── PASSWORD RESET ─────────────────────────────────────
-@main.route('/password-reset')
+@main.route('/password-reset', methods=['GET', 'POST'])
 def password_reset():
+    if request.method == 'POST':
+        email = (request.form.get('email') or '').strip()
+
+        if not email:
+            flash('Please enter your email address.', 'danger')
+            return redirect(url_for('main.password_reset'))
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash('No account was found with that email address.', 'danger')
+            return redirect(url_for('main.password_reset'))
+
+        # Store the user ID temporarily so the next page knows whose password to update.
+        # This keeps the simplified project flow working without setting up email tokens.
+        session['password_reset_user_id'] = user.id
+        return redirect(url_for('main.password_reset_new'))
+
     return render_template('password_reset.html')
+
+
+@main.route('/password-reset/new', methods=['GET', 'POST'])
+def password_reset_new():
+    user_id = session.get('password_reset_user_id')
+
+    if not user_id:
+        flash('Please enter your email address before setting a new password.', 'danger')
+        return redirect(url_for('main.password_reset'))
+
+    user = User.query.get(user_id)
+
+    if not user:
+        session.pop('password_reset_user_id', None)
+        flash('Password reset session expired. Please try again.', 'danger')
+        return redirect(url_for('main.password_reset'))
+
+    if request.method == 'POST':
+        password = request.form.get('password') or ''
+        confirm_password = request.form.get('confirm_password') or ''
+
+        if not password or not confirm_password:
+            flash('Please fill in both password fields.', 'danger')
+            return redirect(url_for('main.password_reset_new'))
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('main.password_reset_new'))
+
+        user.password_hash = generate_password_hash(password)
+        db.session.commit()
+
+        session.pop('password_reset_user_id', None)
+        flash('Password reset successful. Please log in with your new password.', 'success')
+        return redirect(url_for('main.login'))
+
+    return render_template('password_reset_new.html')
 
 # ─── FEEDBACK ───────────────────────────────────────────
 @main.route('/feedback', methods=['GET', 'POST'])
