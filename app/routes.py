@@ -432,6 +432,10 @@ def add_meal():
         total_calories_consumed = sum(meal.calories or 0 for meal in meals)
         total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
         net_calories = total_calories_consumed - total_calories_burned
+        total_protein = sum(meal.protein or 0 for meal in meals)
+        total_carbs = sum(meal.carbs or 0 for meal in meals)
+        total_fats = sum(meal.fats or 0 for meal in meals)
+        total_water_ml = sum(meal.water_ml or 0 for meal in meals)
 
         return jsonify({
             'success': True,
@@ -448,7 +452,11 @@ def add_meal():
             'totals': {
                 'total_calories_consumed': total_calories_consumed,
                 'total_calories_burned': total_calories_burned,
-                'net_calories': net_calories
+                'net_calories': net_calories,
+                'total_protein': total_protein,
+                'total_carbs': total_carbs,
+                'total_fats': total_fats,
+                'total_water_ml': total_water_ml
             }
         }), 201
 

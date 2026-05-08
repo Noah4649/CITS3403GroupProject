@@ -105,7 +105,7 @@
                             </div>
 
                             <div class="col-md-2">
-                                <label for="meal-calories" class="form-label">Calories</label>
+                                <label for="meal-calories" class="form-label">Calories (kcal)</label>
                                 <input type="number"
                                        id="meal-calories"
                                        class="form-control"
@@ -115,7 +115,7 @@
                             </div>
 
                             <div class="col-md-2">
-                                <label for="meal-protein" class="form-label">Protein</label>
+                                <label for="meal-protein" class="form-label">Protein (g)</label>
                                 <input type="number"
                                        id="meal-protein"
                                        class="form-control"
@@ -124,7 +124,7 @@
                             </div>
 
                             <div class="col-md-2">
-                                <label for="meal-carbs" class="form-label">Carbs</label>
+                                <label for="meal-carbs" class="form-label">Carbs (g)</label>
                                 <input type="number"
                                        id="meal-carbs"
                                        class="form-control"
@@ -133,7 +133,7 @@
                             </div>
 
                             <div class="col-md-2">
-                                <label for="meal-fats" class="form-label">Fats</label>
+                                <label for="meal-fats" class="form-label">Fats (g)</label>
                                 <input type="number"
                                        id="meal-fats"
                                        class="form-control"
@@ -142,7 +142,7 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label for="meal-water" class="form-label">Water ml</label>
+                                <label for="meal-water" class="form-label">Water (ml)</label>
                                 <input type="number"
                                        id="meal-water"
                                        class="form-control"
@@ -188,6 +188,26 @@
                                     </tr>
                                 {% endif %}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Daily Totals</th>
+                                    <th id="table-total-calories">
+                                        {{ meals | sum(attribute='calories') }} kcal
+                                    </th>
+                                    <th id="table-total-protein">
+                                        {{ meals | sum(attribute='protein') }} g
+                                    </th>
+                                    <th id="table-total-carbs">
+                                        {{ meals | sum(attribute='carbs') }} g
+                                    </th>
+                                    <th id="table-total-fats">
+                                        {{ meals | sum(attribute='fats') }} g
+                                    </th>
+                                    <th id="table-total-water">
+                                        {{ meals | sum(attribute='water_ml') }} ml
+                                    </th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
