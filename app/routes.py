@@ -469,6 +469,63 @@ def add_meal():
             'message': 'An error occurred while adding the meal.'
         }), 500
 
+# ─── DELETE MEAL API ────────────────────────────────────
+@main.route('/api/delete-meal/<int:meal_id>', methods=['DELETE'])
+@login_required
+def delete_meal(meal_id):
+    meal = Meal.query.get(meal_id)
+
+    if not meal:
+        return jsonify({
+            'success': False,
+            'message': 'Meal not found.'
+        }), 404
+
+    if meal.user_id != current_user.id:
+        return jsonify({
+            'success': False,
+            'message': 'You do not have permission to delete this meal.'
+        }), 403
+
+    db.session.delete(meal)
+    db.session.commit()
+
+    # Recalculate today's totals after deleting the meal
+    today = date.today()
+
+    meals = Meal.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Meal.date) == today
+    ).all()
+
+    workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Workout.date) == today
+    ).all()
+
+    total_calories_consumed = sum(meal.calories or 0 for meal in meals)
+    total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
+    net_calories = total_calories_consumed - total_calories_burned
+
+    total_protein = sum(meal.protein or 0 for meal in meals)
+    total_carbs = sum(meal.carbs or 0 for meal in meals)
+    total_fats = sum(meal.fats or 0 for meal in meals)
+    total_water_ml = sum(meal.water_ml or 0 for meal in meals)
+
+    return jsonify({
+        'success': True,
+        'message': 'Meal deleted successfully.',
+        'meal_id': meal_id,
+        'totals': {
+            'total_calories_consumed': total_calories_consumed,
+            'total_calories_burned': total_calories_burned,
+            'net_calories': net_calories,
+            'total_protein': total_protein,
+            'total_carbs': total_carbs,
+            'total_fats': total_fats,
+            'total_water_ml': total_water_ml
+        }
+    }), 200
+
+
 # ─── Leaderboard ────────────────────────────────────────
 @main.route('/leaderboard')
 @login_required

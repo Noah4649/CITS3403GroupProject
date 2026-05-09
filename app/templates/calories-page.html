@@ -168,6 +168,7 @@
                                     <th>Carbs</th>
                                     <th>Fats</th>
                                     <th>Water</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="meals-table-body">
@@ -180,11 +181,18 @@
                                             <td>{{ meal.carbs or 0 }} g</td>
                                             <td>{{ meal.fats or 0 }} g</td>
                                             <td>{{ meal.water_ml or 0 }} ml</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm delete-meal-btn"
+                                                        data-meal-id="{{ meal.id }}">
+                                                    Delete
+                                                </button>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr id="no-meals-row">
-                                        <td colspan="6">No meals logged today.</td>
+                                        <td colspan="7">No meals logged today.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
@@ -206,6 +214,7 @@
                                     <th id="table-total-water">
                                         {{ meals | sum(attribute='water_ml') }} ml
                                     </th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
