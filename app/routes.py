@@ -1,8 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import date, timedelta
-from app import db
+import hashlib
+import hmac
+from app import db, mail
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
 from flask import abort
 
@@ -49,7 +53,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password_hash, password):
-            flash('Invalid email or password.')
+            flash('Invalid email or password.', 'danger')
             return redirect(url_for('main.login'))
 
         login_user(user)
@@ -121,9 +125,9 @@ def history():
     ).all()
     
     # Calculate aggregate statistics from all user workouts
-    total_workouts = len(workouts)  # Count total number of workouts
-    total_calories_burned = sum(w.calories_burned or 0 for w in workouts)  # Sum all calories (handle None values)
-    total_duration = sum(w.duration_mins or 0 for w in workouts)  # Sum all duration minutes (handle None values)
+    total_workouts = len(workouts)
+    total_calories_burned = sum(w.calories_burned or 0 for w in workouts)
+    total_duration = sum(w.duration_mins or 0 for w in workouts)
     
     # Pass data to template for rendering
     return render_template('history.html',
@@ -142,16 +146,9 @@ def delete_workout(workout_id):
     
     Verifies that the workout belongs to the current user before deleting.
     Associated exercises are automatically deleted due to database cascade.
-    
-    Args:
-        workout_id: The ID of the workout to delete
-    
-    Returns:
-        Redirects to the history page after deletion
     """
     workout = Workout.query.get(workout_id)
     
-    # Verify the workout exists and belongs to the current user
     if workout and workout.user_id == current_user.id:
         db.session.delete(workout)
         db.session.commit()
@@ -167,69 +164,45 @@ def delete_workout(workout_id):
 def start_workout():
     """
     Handles workout creation and persistence to database.
-    
-    GET: Displays the start workout form
-    POST: Processes form data to create Workout and Exercise records
-    
-    Form data processed:
-    - title: Workout title (required)
-    - notes: Optional workout notes
-    - is_public: Boolean for public sharing
-    - exercise_name[]: Array of exercise names
-    - exercise_sets[]: Array of sets per exercise
-    - exercise_reps[]: Array of reps per exercise  
-    - exercise_weight[]: Array of weights in kg per exercise
-    - exercise_duration[]: Array of durations in minutes per exercise
     """
     if request.method == 'POST':
-        # Get basic workout information
         title = (request.form.get('title') or '').strip()
         notes = (request.form.get('notes') or '').strip()
-        is_public = request.form.get('is_public') == '1'  # Checkbox value
+        is_public = request.form.get('is_public') == '1'
 
-        # Get exercise data arrays
         exercise_names = request.form.getlist('exercise_name[]')
         exercise_sets = request.form.getlist('exercise_sets[]')
         exercise_reps = request.form.getlist('exercise_reps[]')
         exercise_weights = request.form.getlist('exercise_weight[]')
         exercise_durations = request.form.getlist('exercise_duration[]')
 
-        # Validation: Workout title is required
         if not title:
             flash('Workout title is required.')
             return redirect(url_for('main.start_workout'))
 
-        # Validation: At least one exercise with a name is required
         if not any((name or '').strip() for name in exercise_names):
             flash('Add at least one exercise to start a workout.')
             return redirect(url_for('main.start_workout'))
 
         try:
-            # Create new Workout record
             new_workout = Workout(
                 user_id=current_user.id,
                 title=title,
                 notes=notes if notes else None,
                 is_public=is_public,
-                # duration_mins and calories_burned will be calculated later
-                # when the workout is completed
             )
             db.session.add(new_workout)
-            db.session.flush()  # Get the workout ID without committing yet
+            db.session.flush()
 
-            # Create Exercise records for each exercise in the workout
             for i, name in enumerate(exercise_names):
-                # Skip empty exercise names
                 if not (name or '').strip():
                     continue
 
-                # Parse numeric values (handle empty strings)
                 sets = int(exercise_sets[i]) if exercise_sets[i] and exercise_sets[i].strip() else None
                 reps = int(exercise_reps[i]) if exercise_reps[i] and exercise_reps[i].strip() else None
                 weight = float(exercise_weights[i]) if exercise_weights[i] and exercise_weights[i].strip() else None
                 duration = int(exercise_durations[i]) if exercise_durations[i] and exercise_durations[i].strip() else None
 
-                # Create Exercise record
                 new_exercise = Exercise(
                     workout_id=new_workout.id,
                     name=name.strip(),
@@ -240,21 +213,16 @@ def start_workout():
                 )
                 db.session.add(new_exercise)
 
-            # Commit all changes to database
             db.session.commit()
 
-            # Redirect to the active/ongoing workout page so the user can
-            # actually run through the workout (timer + set tracking).
             return redirect(url_for('main.workout_active', workout_id=new_workout.id))
 
         except Exception as e:
-            # Rollback on error and show error message
             db.session.rollback()
             flash('An error occurred while saving your workout. Please try again.')
-            print(f"Error saving workout: {e}")  # For debugging
+            print(f"Error saving workout: {e}")
             return redirect(url_for('main.start_workout'))
 
-    # GET request: Display the start workout form
     return render_template('start_workout.html')
 
 # ─── ONGOING WORKOUT ────────────────────────────────────
@@ -263,10 +231,6 @@ def start_workout():
 def workout_active(workout_id):
     """
     Renders the live/in-progress workout page.
-
-    Loads the workout and its exercises so the user can run a timer,
-    tick off sets, and finish the session. Only the workout's owner
-    is allowed to view it.
     """
     workout = Workout.query.get_or_404(workout_id)
 
@@ -280,8 +244,7 @@ def workout_active(workout_id):
 @login_required
 def workout_finish(workout_id):
     """
-    Saves the duration and calories burned when the user ends a session,
-    then redirects to the history page.
+    Saves the duration and calories burned when the user ends a session.
     """
     workout = Workout.query.get_or_404(workout_id)
 
@@ -316,9 +279,156 @@ def friends_feed():
     return render_template('friends_feed.html')
 
 # ─── PASSWORD RESET ─────────────────────────────────────
-@main.route('/password-reset')
+def password_reset_fingerprint(user):
+    """
+    Creates a safe fingerprint of the user's current password hash.
+
+    The token stores this fingerprint, not the actual password hash.
+    If the password changes, the fingerprint changes too, which makes old
+    password reset links stop working.
+    """
+    secret_key = current_app.config['SECRET_KEY']
+    value = f'{user.password_hash}{secret_key}'.encode('utf-8')
+    return hashlib.sha256(value).hexdigest()
+
+
+def generate_password_reset_token(user):
+    """
+    Creates a signed password reset token for one specific user.
+
+    The token contains the user ID and a fingerprint of the user's current
+    password hash. Flask signs the token, so if someone edits it, it becomes
+    invalid.
+    """
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    token_data = {
+        'user_id': user.id,
+        'password_fingerprint': password_reset_fingerprint(user)
+    }
+
+    return serializer.dumps(token_data, salt='password-reset-salt')
+
+
+def verify_password_reset_token(token, max_age=1800):
+    """
+    Checks whether a password reset token is valid and not expired.
+
+    max_age=1800 means the reset link expires after 30 minutes.
+    Returns the matching User if valid, otherwise returns None.
+    """
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        token_data = serializer.loads(
+            token,
+            salt='password-reset-salt',
+            max_age=max_age
+        )
+    except (SignatureExpired, BadSignature):
+        return None
+
+    user = User.query.get(token_data.get('user_id'))
+
+    if not user:
+        return None
+
+    expected_fingerprint = password_reset_fingerprint(user)
+    token_fingerprint = token_data.get('password_fingerprint', '')
+
+    if not hmac.compare_digest(token_fingerprint, expected_fingerprint):
+        return None
+
+    return user
+
+
+def send_password_reset_email(user, reset_url):
+    """
+    Sends the password reset link to the user's registered email address.
+    """
+    msg = Message(
+        subject='Reset your FitTrack password',
+        recipients=[user.email]
+    )
+
+    msg.body = f"""
+Hi {user.username},
+
+You requested to reset your FitTrack password.
+
+Click the link below to reset your password:
+
+{reset_url}
+
+This link will expire in 30 minutes.
+
+If you did not request this password reset, you can ignore this email.
+
+Thanks,
+FitTrack
+"""
+
+    mail.send(msg)
+
+
+@main.route('/password-reset', methods=['GET', 'POST'])
 def password_reset():
+    if request.method == 'POST':
+        email = (request.form.get('email') or '').strip().lower()
+
+        if not email:
+            flash('Please enter your email address.', 'danger')
+            return redirect(url_for('main.password_reset'))
+
+        user = User.query.filter_by(email=email).first()
+
+        # SECURITY NOTE:
+        # Use the same message whether the email exists or not.
+        # This prevents people from testing random emails to discover accounts.
+        if user:
+            token = generate_password_reset_token(user)
+            reset_url = url_for('main.password_reset_new', token=token, _external=True)
+
+            try:
+                send_password_reset_email(user, reset_url)
+            except Exception as e:
+                print(f'Password reset email failed for {user.email}: {e}')
+                flash('There was a problem sending the reset email. Please try again later.', 'danger')
+                return redirect(url_for('main.password_reset'))
+
+        flash('If that email is registered, a password reset link has been sent.', 'info')
+        return redirect(url_for('main.password_reset'))
+
     return render_template('password_reset.html')
+
+
+@main.route('/password-reset/<token>', methods=['GET', 'POST'])
+def password_reset_new(token):
+    user = verify_password_reset_token(token)
+
+    if not user:
+        flash('This password reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('main.password_reset'))
+
+    if request.method == 'POST':
+        password = request.form.get('password') or ''
+        confirm_password = request.form.get('confirm_password') or ''
+
+        if not password or not confirm_password:
+            flash('Please fill in both password fields.', 'danger')
+            return redirect(url_for('main.password_reset_new', token=token))
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('main.password_reset_new', token=token))
+
+        user.password_hash = generate_password_hash(password)
+        db.session.commit()
+
+        flash('Password reset successful. Please log in with your new password.', 'success')
+        return redirect(url_for('main.login'))
+
+    return render_template('password_reset_new.html', token=token)
 
 # ─── FEEDBACK ───────────────────────────────────────────
 @main.route('/feedback', methods=['GET', 'POST'])
@@ -356,39 +466,32 @@ def feedback():
 def calories():
     today = date.today()
 
-    # Get today's meals from the database for the logged-in user
     meals = Meal.query.filter_by(user_id=current_user.id).filter(
         db.func.date(Meal.date) == today
     ).all()
 
-    # Get today's workouts from the database for the logged-in user
     workouts = Workout.query.filter_by(user_id=current_user.id).filter(
         db.func.date(Workout.date) == today
     ).all()
 
-    # Calculate totals from database records
     total_calories_consumed = sum(meal.calories or 0 for meal in meals)
     total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
     net_calories = total_calories_consumed - total_calories_burned
 
-    # Get the user's active calorie goal from the database
     active_calorie_goal = Goal.query.filter_by(
         user_id=current_user.id,
         type='calories',
         completed=False
     ).first()
 
-    # Use the database goal if it exists, otherwise fall back to 600
     calorie_burn_goal = active_calorie_goal.target if active_calorie_goal else 600
 
     burn_progress = min(round((total_calories_burned / calorie_burn_goal) * 100), 100) if calorie_burn_goal else 0
     calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
 
-
-    # Weekly chart data: Monday to Sunday
     selected_week = request.args.get('week', 'this')
 
-    start_of_this_week = today - timedelta(days=today.weekday())  # Monday
+    start_of_this_week = today - timedelta(days=today.weekday())
 
     if selected_week == 'last':
         week_start = start_of_this_week - timedelta(days=7)
@@ -398,7 +501,7 @@ def calories():
         selected_week = 'this'
         week_start = start_of_this_week
 
-    week_end = week_start + timedelta(days=6)  # Sunday
+    week_end = week_start + timedelta(days=6)
 
     week_labels = []
     week_burned_data = []
@@ -435,26 +538,22 @@ def calories():
 @main.route('/leaderboard')
 @login_required
 def leaderboard():
-    # Overall: users ranked by total calories burned across all workouts
     overall_leaderboard = db.session.query(User).join(Workout).group_by(User.id).order_by(
         db.func.sum(Workout.calories_burned).desc()
     ).limit(10).all()
 
-    # Bench press: users ranked by their heaviest bench press
     bench_leaderboard = db.session.query(
         User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
     ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
         db.func.lower(Exercise.name).like('%bench press%')
     ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
 
-    # Squat: users ranked by their heaviest squat
     squat_leaderboard = db.session.query(
         User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
     ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
         db.func.lower(Exercise.name).like('%squat%')
     ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
 
-    # Deadlift: users ranked by their heaviest deadlift
     deadlift_leaderboard = db.session.query(
         User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
     ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
