@@ -97,6 +97,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const mealId = event.target.dataset.mealId;
 
+        const confirmed = confirm('Are you sure you want to delete this meal?');
+
+        if (!confirmed) {
+            return;
+        }
+
         fetch(`/api/delete-meal/${mealId}`, {
             method: 'DELETE'
         })
