@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const addMealForm = document.getElementById('add-meal-form');
     const mealsTableBody = document.getElementById('meals-table-body');
 
+    function formatNumber(value) {
+        return Number(value || 0).toFixed(1);
+    }
+
     if (!addMealForm || !mealsTableBody) return;
 
     addMealForm.addEventListener('submit', function (event) {
@@ -47,11 +51,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             newRow.innerHTML = `
                 <td>${meal.name}</td>
-                <td>${meal.calories} kcal</td>
-                <td>${meal.protein} g</td>
-                <td>${meal.carbs} g</td>
-                <td>${meal.fats} g</td>
-                <td>${meal.water_ml} ml</td>
+                <td>${formatNumber(meal.calories)} kcal</td>
+                <td>${formatNumber(meal.protein)} g</td>
+                <td>${formatNumber(meal.carbs)} g</td>
+                <td>${formatNumber(meal.fats)} g</td>
+                <td>${formatNumber(meal.water_ml)} ml</td>
                 <td>
                     <button type="button"
                             class="btn btn-outline-secondary btn-sm delete-meal-btn"
@@ -68,15 +72,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (totals) {
                 // Update summary cards
-                document.getElementById('total-calories-consumed').textContent = totals.total_calories_consumed;
-                document.getElementById('net-calories').textContent = totals.net_calories;
+                document.getElementById('total-calories-consumed').textContent = formatNumber(totals.total_calories_consumed);
+                document.getElementById('net-calories').textContent = formatNumber(totals.net_calories);
 
                 // Update meals table footer totals
-                document.getElementById('table-total-calories').textContent = `${totals.total_calories_consumed} kcal`;
-                document.getElementById('table-total-protein').textContent = `${totals.total_protein} g`;
-                document.getElementById('table-total-carbs').textContent = `${totals.total_carbs} g`;
-                document.getElementById('table-total-fats').textContent = `${totals.total_fats} g`;
-                document.getElementById('table-total-water').textContent = `${totals.total_water_ml} ml`;
+                document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
+                document.getElementById('table-total-protein').textContent = `${formatNumber(totals.total_protein)} g`;
+                document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
+                document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
+                document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
             }
 
             addMealForm.reset();
@@ -123,14 +127,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const totals = data.totals;
 
             if (totals) {
-                document.getElementById('total-calories-consumed').textContent = totals.total_calories_consumed;
-                document.getElementById('net-calories').textContent = totals.net_calories;
+                document.getElementById('total-calories-consumed').textContent = formatNumber(totals.total_calories_consumed);
+                document.getElementById('net-calories').textContent = formatNumber(totals.net_calories);
 
-                document.getElementById('table-total-calories').textContent = `${totals.total_calories_consumed} kcal`;
-                document.getElementById('table-total-protein').textContent = `${totals.total_protein} g`;
-                document.getElementById('table-total-carbs').textContent = `${totals.total_carbs} g`;
-                document.getElementById('table-total-fats').textContent = `${totals.total_fats} g`;
-                document.getElementById('table-total-water').textContent = `${totals.total_water_ml} ml`;
+                document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
+                document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
+                document.getElementById('table-total-protein').textContent = `${formatNumber(totals.total_protein)} g`;
+                document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
+                document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
+                document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
             }
         })
         .catch(error => {
