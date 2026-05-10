@@ -474,10 +474,41 @@ def welcome():
     return render_template('welcome-page.html')
 
 # ─── SETTINGS ───────────────────────────────────────────
-@main.route('/settings')
+@main.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Verify current password is correct
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash('Current password is incorrect.')
+            return redirect(url_for('main.settings'))
+
+        # Verify new passwords match
+        if new_password != confirm_password:
+            flash('New passwords do not match.')
+            return redirect(url_for('main.settings'))
+
+        # Verify new password is not the same as current
+        if check_password_hash(current_user.password_hash, new_password):
+            flash('New password must be different from your current password.')
+            return redirect(url_for('main.settings'))
+
+        # Update password
+        current_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash('Password updated successfully.')
+        return redirect(url_for('main.settings'))
+
     return render_template('settings.html')
+
+# ─── TERMS & CONDITIONS ─────────────────────────────────
+@main.route('/terms')
+def terms():
+    return render_template('TermsCond.html')
 
 # ─── ADMIN ──────────────────────────────────────────────
 @main.route('/admin')
