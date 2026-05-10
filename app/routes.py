@@ -534,6 +534,154 @@ def calories():
         week_burned_data=week_burned_data
     )
 
+# ─── ADD MEAL API ───────────────────────────────────────
+@main.route('/api/add-meal', methods=['POST'])
+@login_required
+def add_meal():
+    try:
+        data = request.get_json()
+
+        name = (data.get('name') or '').strip()
+        calories = float(data.get('calories') or 0)
+        protein = float(data.get('protein') or 0)
+        carbs = float(data.get('carbs') or 0)
+        fats = float(data.get('fats') or 0)
+        water_ml = float(data.get('water_ml') or 0)
+
+        if not name:
+            return jsonify({
+                'success': False,
+                'message': 'Meal name is required.'
+            }), 400
+
+        if calories <= 0:
+            return jsonify({
+                'success': False,
+                'message': 'Calories must be greater than 0.'
+            }), 400
+
+        meal = Meal(
+            user_id=current_user.id,
+            name=name,
+            calories=calories,
+            protein=protein,
+            carbs=carbs,
+            fats=fats,
+            water_ml=water_ml,
+            date=datetime.now()
+        )
+
+        db.session.add(meal)
+        db.session.commit()
+
+        # Recalculate today's totals after adding the meal
+        today = date.today()
+
+        meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == today
+        ).all()
+
+        workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Workout.date) == today
+        ).all()
+
+        total_calories_consumed = sum(meal.calories or 0 for meal in meals)
+        total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
+        net_calories = total_calories_consumed - total_calories_burned
+        total_protein = sum(meal.protein or 0 for meal in meals)
+        total_carbs = sum(meal.carbs or 0 for meal in meals)
+        total_fats = sum(meal.fats or 0 for meal in meals)
+        total_water_ml = sum(meal.water_ml or 0 for meal in meals)
+
+        return jsonify({
+            'success': True,
+            'message': 'Meal added successfully.',
+            'meal': {
+                'id': meal.id,
+                'name': meal.name,
+                'calories': meal.calories,
+                'protein': meal.protein or 0,
+                'carbs': meal.carbs or 0,
+                'fats': meal.fats or 0,
+                'water_ml': meal.water_ml or 0
+            },
+            'totals': {
+                'total_calories_consumed': total_calories_consumed,
+                'total_calories_burned': total_calories_burned,
+                'net_calories': net_calories,
+                'total_protein': total_protein,
+                'total_carbs': total_carbs,
+                'total_fats': total_fats,
+                'total_water_ml': total_water_ml
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding meal: {e}")
+
+        return jsonify({
+            'success': False,
+            'message': 'An error occurred while adding the meal.'
+        }), 500
+
+# ─── DELETE MEAL API ────────────────────────────────────
+@main.route('/api/delete-meal/<int:meal_id>', methods=['DELETE'])
+@login_required
+def delete_meal(meal_id):
+    meal = Meal.query.get(meal_id)
+
+    if not meal:
+        return jsonify({
+            'success': False,
+            'message': 'Meal not found.'
+        }), 404
+
+    if meal.user_id != current_user.id:
+        return jsonify({
+            'success': False,
+            'message': 'You do not have permission to delete this meal.'
+        }), 403
+
+    db.session.delete(meal)
+    db.session.commit()
+
+    # Recalculate today's totals after deleting the meal
+    today = date.today()
+
+    meals = Meal.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Meal.date) == today
+    ).all()
+
+    workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+        db.func.date(Workout.date) == today
+    ).all()
+
+    total_calories_consumed = sum(meal.calories or 0 for meal in meals)
+    total_calories_burned = sum(workout.calories_burned or 0 for workout in workouts)
+    net_calories = total_calories_consumed - total_calories_burned
+
+    total_protein = sum(meal.protein or 0 for meal in meals)
+    total_carbs = sum(meal.carbs or 0 for meal in meals)
+    total_fats = sum(meal.fats or 0 for meal in meals)
+    total_water_ml = sum(meal.water_ml or 0 for meal in meals)
+
+    return jsonify({
+        'success': True,
+        'message': 'Meal deleted successfully.',
+        'meal_id': meal_id,
+        'totals': {
+            'total_calories_consumed': total_calories_consumed,
+            'total_calories_burned': total_calories_burned,
+            'net_calories': net_calories,
+            'total_protein': total_protein,
+            'total_carbs': total_carbs,
+            'total_fats': total_fats,
+            'total_water_ml': total_water_ml
+        }
+    }), 200
+
+
 # ─── Leaderboard ────────────────────────────────────────
 @main.route('/leaderboard')
 @login_required
