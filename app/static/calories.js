@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    //remove meal
+// ─── AJAX DELETE MEAL ───────────────────────────────────
     mealsTableBody.addEventListener('click', function (event) {
         if (!event.target.classList.contains('delete-meal-btn')) return;
 
@@ -103,12 +103,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            // Remove the deleted meal row from the table
             const row = document.getElementById(`meal-row-${mealId}`);
 
             if (row) {
                 row.remove();
             }
 
+            // If there are no meals left, show the empty table message
             if (mealsTableBody.children.length === 0) {
                 mealsTableBody.innerHTML = `
                     <tr id="no-meals-row">
@@ -117,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
             }
 
+            // Update the summary cards and table totals
             const totals = data.totals;
 
             if (totals) {
@@ -135,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Something went wrong while deleting the meal.');
         });
     });
-
 });
 
 document.addEventListener('DOMContentLoaded', function () {

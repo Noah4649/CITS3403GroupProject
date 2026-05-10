@@ -174,7 +174,7 @@
                             <tbody id="meals-table-body">
                                 {% if meals %}
                                     {% for meal in meals %}
-                                        <tr>
+                                        <tr id="meal-row-{{ meal.id }}">
                                             <td>{{ meal.name }}</td>
                                             <td>{{ meal.calories }} kcal</td>
                                             <td>{{ meal.protein or 0 }} g</td>
