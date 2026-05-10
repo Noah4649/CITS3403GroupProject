@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, timedelta
@@ -526,3 +526,46 @@ def admin():
         reports=reports,
         feedbacks=feedbacks
     )
+
+# ─── API: EDIT PROFILE ──────────────────────────────────
+@main.route('/api/edit-profile', methods=['POST'])
+@login_required
+def api_edit_profile():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'success': False, 'error': 'No data received.'}), 400
+
+    # Only update fields that were actually sent and are not empty
+    username = (data.get('username') or '').strip()
+    bio = (data.get('bio') or '').strip()
+    weight = data.get('weight')
+    height = data.get('height')
+    goal = (data.get('goal') or '').strip()
+
+    # Check username is not already taken by another user
+    if username and username != current_user.username:
+        existing = User.query.filter_by(username=username).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Username already taken.'}), 409
+
+    # Apply updates
+    if username:
+        current_user.username = username
+    if bio:
+        current_user.bio = bio
+    if weight:
+        try:
+            current_user.weight = float(weight)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid weight value.'}), 400
+    if height:
+        try:
+            current_user.height = float(height)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid height value.'}), 400
+    if goal:
+        current_user.goal = goal
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Profile updated successfully.'})
