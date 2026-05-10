@@ -14,35 +14,9 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg topbar">
+    <nav class="navbar topbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="welcome-page.html">FitTrack</a>
-
-            <button class="navbar-toggler" type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#mainNav"
-                    aria-controls="mainNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="welcome-page.html">Welcome</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard.html">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="history.html">History</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="friends_feed.html">Friend Feed</a>
-                    </li>
-                </ul>
-            </div>
+            <a class="navbar-brand topbar-title" href="{{ url_for('main.index') }}">FitTrack</a>
         </div>
     </nav>
 
@@ -58,8 +32,8 @@
                     </p>
 
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <a href="login.html" class="btn btn-primary">Login</a>
-                        <a href="signup.html" class="btn btn-outline-primary">Sign Up</a>
+                        <a href="{{ url_for('main.login') }}" class="btn btn-primary">Login</a>
+                        <a href="{{ url_for('main.signup') }}" class="btn btn-outline-primary">Sign Up</a>
                     </div>
                 </div>
             </div>
@@ -67,5 +41,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

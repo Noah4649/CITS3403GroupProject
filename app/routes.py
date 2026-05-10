@@ -3,7 +3,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime, timedelta
 from app import db
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
+from flask import abort
 
 main = Blueprint('main', __name__)
 
@@ -12,7 +13,7 @@ main = Blueprint('main', __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-    return redirect(url_for('main.login'))
+    return render_template('welcome-page.html')
 
 # ─── SIGNUP ─────────────────────────────────────────────
 @main.route('/signup', methods=['GET', 'POST'])
@@ -242,9 +243,9 @@ def start_workout():
             # Commit all changes to database
             db.session.commit()
 
-            # Success message and redirect to history page
-            flash(f'Workout "{title}" started successfully! Check your history to see it.')
-            return redirect(url_for('main.history'))
+            # Redirect to the active/ongoing workout page so the user can
+            # actually run through the workout (timer + set tracking).
+            return redirect(url_for('main.workout_active', workout_id=new_workout.id))
 
         except Exception as e:
             # Rollback on error and show error message
@@ -255,6 +256,58 @@ def start_workout():
 
     # GET request: Display the start workout form
     return render_template('start_workout.html')
+
+# ─── ONGOING WORKOUT ────────────────────────────────────
+@main.route('/workout/<int:workout_id>/active')
+@login_required
+def workout_active(workout_id):
+    """
+    Renders the live/in-progress workout page.
+
+    Loads the workout and its exercises so the user can run a timer,
+    tick off sets, and finish the session. Only the workout's owner
+    is allowed to view it.
+    """
+    workout = Workout.query.get_or_404(workout_id)
+
+    if workout.user_id != current_user.id:
+        abort(403)
+
+    return render_template('workout_active.html', workout=workout)
+
+# ─── FINISH WORKOUT ─────────────────────────────────────
+@main.route('/workout/<int:workout_id>/finish', methods=['POST'])
+@login_required
+def workout_finish(workout_id):
+    """
+    Saves the duration and calories burned when the user ends a session,
+    then redirects to the history page.
+    """
+    workout = Workout.query.get_or_404(workout_id)
+
+    if workout.user_id != current_user.id:
+        abort(403)
+
+    duration_raw = (request.form.get('duration_mins') or '').strip()
+    calories_raw = (request.form.get('calories_burned') or '').strip()
+
+    try:
+        duration_mins = int(duration_raw) if duration_raw else 0
+        calories_burned = float(calories_raw) if calories_raw else 0.0
+    except ValueError:
+        flash('Duration and calories must be numbers.')
+        return redirect(url_for('main.workout_active', workout_id=workout.id))
+
+    if duration_mins < 0 or calories_burned < 0:
+        flash('Duration and calories cannot be negative.')
+        return redirect(url_for('main.workout_active', workout_id=workout.id))
+
+    workout.duration_mins = duration_mins
+    workout.calories_burned = calories_burned
+    db.session.commit()
+
+    flash(f'Nice work! "{workout.title}" saved to your history.')
+    return redirect(url_for('main.history'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
@@ -573,3 +626,20 @@ def welcome():
 @login_required
 def settings():
     return render_template('settings.html')
+
+# ─── ADMIN ──────────────────────────────────────────────
+@main.route('/admin')
+@login_required
+def admin():
+    if not current_user.is_admin:
+        abort(403)
+
+    users = User.query.order_by(User.created_at.desc()).all()
+    reports = Report.query.order_by(Report.created_at.desc()).all()
+    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+
+    return render_template('admin.html',
+        users=users,
+        reports=reports,
+        feedbacks=feedbacks
+    )
