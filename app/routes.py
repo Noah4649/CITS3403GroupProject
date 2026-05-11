@@ -1,16 +1,18 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import hashlib
 import hmac
+
 from app import db, mail
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
-from flask import abort
+
 
 main = Blueprint('main', __name__)
+
 
 # ─── HOME ───────────────────────────────────────────────
 @main.route('/')
@@ -18,6 +20,7 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     return render_template('welcome-page.html')
+
 
 # ─── SIGNUP ─────────────────────────────────────────────
 @main.route('/signup', methods=['GET', 'POST'])
@@ -37,12 +40,15 @@ def signup():
             email=email,
             password_hash=generate_password_hash(password)
         )
+
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
+
         return redirect(url_for('main.dashboard'))
 
     return render_template('signup.html')
+
 
 # ─── LOGIN ──────────────────────────────────────────────
 @main.route('/login', methods=['GET', 'POST'])
@@ -52,6 +58,7 @@ def login():
         password = request.form.get('password')
 
         user = User.query.filter_by(email=email).first()
+
         if not user or not check_password_hash(user.password_hash, password):
             flash('Invalid email or password.', 'danger')
             return redirect(url_for('main.login'))
@@ -61,6 +68,7 @@ def login():
 
     return render_template('login.html')
 
+
 # ─── LOGOUT ─────────────────────────────────────────────
 @main.route('/logout')
 @login_required
@@ -68,24 +76,30 @@ def logout():
     logout_user()
     return redirect(url_for('main.login'))
 
+
 # ─── DASHBOARD ──────────────────────────────────────────
 @main.route('/dashboard')
 @login_required
 def dashboard():
     today = date.today()
+
     workouts = Workout.query.filter_by(user_id=current_user.id).filter(
         db.func.date(Workout.date) == today
     ).all()
+
     meals = Meal.query.filter_by(user_id=current_user.id).filter(
         db.func.date(Meal.date) == today
     ).all()
-    total_calories = sum(m.calories for m in meals)
 
-    return render_template('dashboard.html',
+    total_calories = sum(m.calories or 0 for m in meals)
+
+    return render_template(
+        'dashboard.html',
         workouts=workouts,
         meals=meals,
         total_calories=total_calories
     )
+
 
 # ─── PROFILE ────────────────────────────────────────────
 @main.route('/profile')
@@ -94,48 +108,35 @@ def profile():
     workouts = Workout.query.filter_by(user_id=current_user.id).all()
     achievements = Achievement.query.filter_by(user_id=current_user.id).all()
     total_calories_burned = sum(w.calories_burned or 0 for w in workouts)
-    return render_template('profile.html',
+
+    return render_template(
+        'profile.html',
         workouts=workouts,
         achievements=achievements,
         total_calories_burned=total_calories_burned
     )
 
+
 # ─── WORKOUT HISTORY ────────────────────────────────────
-# This route displays the user's complete workout history with statistics
 @main.route('/history')
 @login_required
 def history():
-    """
-    Renders the workout history page showing all past workouts and statistics.
-    
-    Features:
-    - Displays all workouts for the current logged-in user
-    - Sorted by most recent first (descending date order)
-    - Calculates three key statistics:
-        1. Total number of workouts ever completed
-        2. Total calories burned across all workouts
-        3. Total time spent exercising (in minutes)
-    
-    Returns:
-        Renders history.html template with workout data and statistics
-    """
-    # Query all workouts from the database for current user, newest first
     workouts = Workout.query.filter_by(user_id=current_user.id).order_by(
         Workout.date.desc()
     ).all()
-    
-    # Calculate aggregate statistics from all user workouts
+
     total_workouts = len(workouts)
     total_calories_burned = sum(w.calories_burned or 0 for w in workouts)
     total_duration = sum(w.duration_mins or 0 for w in workouts)
-    
-    # Pass data to template for rendering
-    return render_template('history.html',
+
+    return render_template(
+        'history.html',
         workouts=workouts,
         total_workouts=total_workouts,
         total_calories_burned=total_calories_burned,
         total_duration=total_duration
     )
+
 
 # ─── DELETE WORKOUT ─────────────────────────────────────
 @main.route('/delete-workout/<int:workout_id>')
@@ -143,20 +144,21 @@ def history():
 def delete_workout(workout_id):
     """
     Deletes a workout from the database.
-    
+
     Verifies that the workout belongs to the current user before deleting.
     Associated exercises are automatically deleted due to database cascade.
     """
     workout = Workout.query.get(workout_id)
-    
+
     if workout and workout.user_id == current_user.id:
         db.session.delete(workout)
         db.session.commit()
         flash('Workout deleted successfully.')
     else:
         flash('Workout not found or you do not have permission to delete it.')
-    
+
     return redirect(url_for('main.history'))
+
 
 # ─── START WORKOUT ──────────────────────────────────────
 @main.route('/start-workout', methods=['GET', 'POST'])
@@ -168,7 +170,7 @@ def start_workout():
     if request.method == 'POST':
         title = (request.form.get('title') or '').strip()
         notes = (request.form.get('notes') or '').strip()
-        is_public = request.form.get('is_public') == '1'
+        is_public = request.form.get('is_public') in ('1', 'on', 'true', 'True')
 
         exercise_names = request.form.getlist('exercise_name[]')
         exercise_sets = request.form.getlist('exercise_sets[]')
@@ -184,33 +186,52 @@ def start_workout():
             flash('Add at least one exercise to start a workout.')
             return redirect(url_for('main.start_workout'))
 
+        def get_form_value(values, index):
+            return values[index] if index < len(values) else None
+
+        def to_int(value):
+            try:
+                return int(value) if value and value.strip() else None
+            except ValueError:
+                return None
+
+        def to_float(value):
+            try:
+                return float(value) if value and value.strip() else None
+            except ValueError:
+                return None
+
         try:
             new_workout = Workout(
                 user_id=current_user.id,
                 title=title,
                 notes=notes if notes else None,
-                is_public=is_public,
+                is_public=is_public
             )
+
             db.session.add(new_workout)
             db.session.flush()
 
             for i, name in enumerate(exercise_names):
-                if not (name or '').strip():
+                name = (name or '').strip()
+
+                if not name:
                     continue
 
-                sets = int(exercise_sets[i]) if exercise_sets[i] and exercise_sets[i].strip() else None
-                reps = int(exercise_reps[i]) if exercise_reps[i] and exercise_reps[i].strip() else None
-                weight = float(exercise_weights[i]) if exercise_weights[i] and exercise_weights[i].strip() else None
-                duration = int(exercise_durations[i]) if exercise_durations[i] and exercise_durations[i].strip() else None
+                sets = to_int(get_form_value(exercise_sets, i))
+                reps = to_int(get_form_value(exercise_reps, i))
+                weight = to_float(get_form_value(exercise_weights, i))
+                duration = to_int(get_form_value(exercise_durations, i))
 
                 new_exercise = Exercise(
                     workout_id=new_workout.id,
-                    name=name.strip(),
+                    name=name,
                     sets=sets,
                     reps=reps,
                     weight_kg=weight,
                     duration_mins=duration
                 )
+
                 db.session.add(new_exercise)
 
             db.session.commit()
@@ -225,6 +246,7 @@ def start_workout():
 
     return render_template('start_workout.html')
 
+
 # ─── ONGOING WORKOUT ────────────────────────────────────
 @main.route('/workout/<int:workout_id>/active')
 @login_required
@@ -238,6 +260,7 @@ def workout_active(workout_id):
         abort(403)
 
     return render_template('workout_active.html', workout=workout)
+
 
 # ─── FINISH WORKOUT ─────────────────────────────────────
 @main.route('/workout/<int:workout_id>/finish', methods=['POST'])
@@ -272,11 +295,21 @@ def workout_finish(workout_id):
     flash(f'Nice work! "{workout.title}" saved to your history.')
     return redirect(url_for('main.history'))
 
+
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
 @login_required
 def friends_feed():
-    return render_template('friends_feed.html')
+    public_workouts = Workout.query.filter_by(is_public=True).order_by(
+        Workout.date.desc()
+    ).all()
+
+    return render_template(
+        'friends_feed.html',
+        current_username=current_user.username,
+        public_workouts=public_workouts
+    )
+
 
 # ─── PASSWORD RESET ─────────────────────────────────────
 def password_reset_fingerprint(user):
@@ -430,6 +463,7 @@ def password_reset_new(token):
 
     return render_template('password_reset_new.html', token=token)
 
+
 # ─── FEEDBACK ───────────────────────────────────────────
 @main.route('/feedback', methods=['GET', 'POST'])
 @login_required
@@ -460,7 +494,8 @@ def feedback():
 
     return render_template('feedback.html', submissions=submissions)
 
-# ─── Calories ───────────────────────────────────────────
+
+# ─── CALORIES ───────────────────────────────────────────
 @main.route('/calories')
 @login_required
 def calories():
@@ -490,7 +525,6 @@ def calories():
     calories_remaining = max(calorie_burn_goal - total_calories_burned, 0)
 
     selected_week = request.args.get('week', 'this')
-
     start_of_this_week = today - timedelta(days=today.weekday())
 
     if selected_week == 'last':
@@ -534,6 +568,7 @@ def calories():
         week_burned_data=week_burned_data
     )
 
+
 # ─── ADD MEAL API ───────────────────────────────────────
 @main.route('/api/add-meal', methods=['POST'])
 @login_required
@@ -574,7 +609,6 @@ def add_meal():
         db.session.add(meal)
         db.session.commit()
 
-        # Recalculate today's totals after adding the meal
         today = date.today()
 
         meals = Meal.query.filter_by(user_id=current_user.id).filter(
@@ -625,6 +659,7 @@ def add_meal():
             'message': 'An error occurred while adding the meal.'
         }), 500
 
+
 # ─── DELETE MEAL API ────────────────────────────────────
 @main.route('/api/delete-meal/<int:meal_id>', methods=['DELETE'])
 @login_required
@@ -646,7 +681,6 @@ def delete_meal(meal_id):
     db.session.delete(meal)
     db.session.commit()
 
-    # Recalculate today's totals after deleting the meal
     today = date.today()
 
     meals = Meal.query.filter_by(user_id=current_user.id).filter(
@@ -682,7 +716,7 @@ def delete_meal(meal_id):
     }), 200
 
 
-# ─── Leaderboard ────────────────────────────────────────
+# ─── LEADERBOARD ────────────────────────────────────────
 @main.route('/leaderboard')
 @login_required
 def leaderboard():
@@ -691,34 +725,58 @@ def leaderboard():
     ).limit(10).all()
 
     bench_leaderboard = db.session.query(
-        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        User.username,
+        db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).join(
+        Exercise,
+        Exercise.workout_id == Workout.id
+    ).filter(
         db.func.lower(Exercise.name).like('%bench press%')
     ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
 
     squat_leaderboard = db.session.query(
-        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        User.username,
+        db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).join(
+        Exercise,
+        Exercise.workout_id == Workout.id
+    ).filter(
         db.func.lower(Exercise.name).like('%squat%')
     ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
 
     deadlift_leaderboard = db.session.query(
-        User.username, db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(Workout, Workout.user_id == User.id).join(Exercise, Exercise.workout_id == Workout.id).filter(
+        User.username,
+        db.func.max(Exercise.weight_kg).label('weight_kg')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).join(
+        Exercise,
+        Exercise.workout_id == Workout.id
+    ).filter(
         db.func.lower(Exercise.name).like('%deadlift%')
     ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
 
-    return render_template('leaderboard-page.html',
+    return render_template(
+        'leaderboard-page.html',
         overall_leaderboard=overall_leaderboard,
         bench_leaderboard=bench_leaderboard,
         squat_leaderboard=squat_leaderboard,
         deadlift_leaderboard=deadlift_leaderboard
     )
 
-# ─── Welcome ────────────────────────────────────────────
+
+# ─── WELCOME ────────────────────────────────────────────
 @main.route('/welcome')
 def welcome():
     return render_template('welcome-page.html')
+
 
 # ─── SETTINGS ───────────────────────────────────────────
 @main.route('/settings', methods=['GET', 'POST'])
@@ -765,14 +823,6 @@ def admin():
         abort(403)
 
     users = User.query.order_by(User.created_at.desc()).all()
-
-    reports = Feedback.query.filter_by(type='report') \
-        .order_by(Feedback.created_at.desc()) \
-        .all()
-
-    feedbacks = Feedback.query.filter(Feedback.type != 'report') \
-        .order_by(Feedback.created_at.desc()) \
-        .all()
 
     return render_template(
         'admin.html',
