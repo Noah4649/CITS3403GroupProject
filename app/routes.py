@@ -779,11 +779,41 @@ def welcome():
 
 
 # ─── SETTINGS ───────────────────────────────────────────
-@main.route('/settings')
+@main.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Verify current password is correct
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash('Current password is incorrect.')
+            return redirect(url_for('main.settings'))
+
+        # Verify new passwords match
+        if new_password != confirm_password:
+            flash('New passwords do not match.')
+            return redirect(url_for('main.settings'))
+
+        # Verify new password is not the same as current
+        if check_password_hash(current_user.password_hash, new_password):
+            flash('New password must be different from your current password.')
+            return redirect(url_for('main.settings'))
+
+        # Update password
+        current_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash('Password updated successfully.')
+        return redirect(url_for('main.settings'))
+
     return render_template('settings.html')
 
+# ─── TERMS & CONDITIONS ─────────────────────────────────
+@main.route('/terms')
+def terms():
+    return render_template('TermsCond.html')
 
 # ─── ADMIN ──────────────────────────────────────────────
 @main.route('/admin')
@@ -802,3 +832,46 @@ def admin():
         reports=reports,
         feedbacks=feedbacks
     )
+
+# ─── API: EDIT PROFILE ──────────────────────────────────
+@main.route('/api/edit-profile', methods=['POST'])
+@login_required
+def api_edit_profile():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'success': False, 'error': 'No data received.'}), 400
+
+    # Only update fields that were actually sent and are not empty
+    username = (data.get('username') or '').strip()
+    bio = (data.get('bio') or '').strip()
+    weight = data.get('weight')
+    height = data.get('height')
+    goal = (data.get('goal') or '').strip()
+
+    # Check username is not already taken by another user
+    if username and username != current_user.username:
+        existing = User.query.filter_by(username=username).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Username already taken.'}), 409
+
+    # Apply updates
+    if username:
+        current_user.username = username
+    if bio:
+        current_user.bio = bio
+    if weight:
+        try:
+            current_user.weight = float(weight)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid weight value.'}), 400
+    if height:
+        try:
+            current_user.height = float(height)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid height value.'}), 400
+    if goal:
+        current_user.goal = goal
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Profile updated successfully.'})
