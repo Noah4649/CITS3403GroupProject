@@ -39,7 +39,7 @@
                     </div>
 
                     <p class="section-title text-muted mt-2 mb-0 text-center">
-                        {{ calories_remaining }} kcal remaining to hit today's goal.
+                        {{ calories_remaining }} kcal remaining to complete your goal.
                     </p>
                 </div>
             </div>
@@ -53,7 +53,9 @@
                     <div class="card app-card h-100 text-center">
                         <div class="card-body">
                             <h3 class="section-title h5 mb-2">Calories Consumed</h3>
-                            <p class="section-title section-title-lg fw-bold mb-1">{{ total_calories_consumed }}</p>
+                            <p id="total-calories-consumed" class="section-title section-title-lg fw-bold mb-1">
+                                {{ total_calories_consumed }}
+                            </p>
                             <p class="section-title text-muted mb-0 text-center">kcal today</p>
                         </div>
                     </div>
@@ -73,7 +75,9 @@
                     <div class="card app-card h-100 text-center">
                         <div class="card-body">
                             <h3 class="section-title h5 mb-2">Net Calories</h3>
-                            <p class="section-title section-title-lg fw-bold mb-1">{{ net_calories }}</p>
+                            <p id="net-calories" class="section-title section-title-lg fw-bold mb-1">
+                                {{ net_calories }}
+                            </p>
                             <p class="section-title text-muted mb-0 text-center">consumed after burn</p>
                         </div>
                     </div>
@@ -88,6 +92,72 @@
                 <div class="card-body">
                     <h2 class="section-title section-title-lg text-center">Today's Meals</h2>
 
+                    <!-- AJAX add meal form -->
+                    <form id="add-meal-form" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="meal-name" class="form-label">Meal name</label>
+                                <input type="text"
+                                       id="meal-name"
+                                       class="form-control"
+                                       placeholder="e.g. Chicken rice bowl"
+                                       required>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-calories" class="form-label">Calories (kcal)</label>
+                                <input type="number"
+                                       id="meal-calories"
+                                       class="form-control"
+                                       min="1"
+                                       placeholder ="0"
+                                       required>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-protein" class="form-label">Protein (g)</label>
+                                <input type="number"
+                                       id="meal-protein"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-carbs" class="form-label">Carbs (g)</label>
+                                <input type="number"
+                                       id="meal-carbs"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="meal-fats" class="form-label">Fats (g)</label>
+                                <input type="number"
+                                       id="meal-fats"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="meal-water" class="form-label">Water (ml)</label>
+                                <input type="number"
+                                       id="meal-water"
+                                       class="form-control"
+                                       min="0"
+                                       placeholder ="0">
+                            </div>
+
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add Meal
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table text-center custom-table">
                             <thead>
@@ -98,42 +168,99 @@
                                     <th>Carbs</th>
                                     <th>Fats</th>
                                     <th>Water</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="meals-table-body">
                                 {% if meals %}
                                     {% for meal in meals %}
-                                        <tr>
+                                        <tr id="meal-row-{{ meal.id }}">
                                             <td>{{ meal.name }}</td>
                                             <td>{{ meal.calories }} kcal</td>
                                             <td>{{ meal.protein or 0 }} g</td>
                                             <td>{{ meal.carbs or 0 }} g</td>
                                             <td>{{ meal.fats or 0 }} g</td>
                                             <td>{{ meal.water_ml or 0 }} ml</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm delete-meal-btn"
+                                                        data-meal-id="{{ meal.id }}">
+                                                    Delete
+                                                </button>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="6">No meals logged today.</td>
+                                    <tr id="no-meals-row">
+                                        <td colspan="7">No meals logged today.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Daily Totals</th>
+                                    <th id="table-total-calories">
+                                        {{ meals | sum(attribute='calories') }} kcal
+                                    </th>
+                                    <th id="table-total-protein">
+                                        {{ meals | sum(attribute='protein') }} g
+                                    </th>
+                                    <th id="table-total-carbs">
+                                        {{ meals | sum(attribute='carbs') }} g
+                                    </th>
+                                    <th id="table-total-fats">
+                                        {{ meals | sum(attribute='fats') }} g
+                                    </th>
+                                    <th id="table-total-water">
+                                        {{ meals | sum(attribute='water_ml') }} ml
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Weekly chart placeholder -->
+        <!-- Weekly calories chart -->
         <section class="mb-4">
             <div class="card app-card h-100 text-center">
                 <div class="card-body">
-                    <h2 class="section-title section-title-lg text-center">Calories Burnt This Week</h2>
-                    <canvas id="caloriesChart"></canvas>
+                    <h2 class="section-title section-title-lg text-center">
+                        Calories Burnt: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
+                    </h2>
+
+                    <form method="GET" action="{{ url_for('main.calories') }}" class="mb-3">
+                        <label for="week" class="form-label">Select week</label>
+
+                        <select name="week" id="week" class="form-select" onchange="this.form.submit()">
+                            <option value="this" {% if selected_week == 'this' %}selected{% endif %}>This week</option>
+                            <option value="last" {% if selected_week == 'last' %}selected{% endif %}>Last week</option>
+                            <option value="two_weeks_ago" {% if selected_week == 'two_weeks_ago' %}selected{% endif %}>Two weeks ago</option>
+                        </select>
+                    </form>
+
+                    <div class="calories-chart-wrapper">
+                        <canvas id="caloriesChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
 
     </div>
+{% endblock %}
 
+{% block extra_scripts %}
+    <!-- Calories Burnt Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        window.caloriesChartData = {
+            labels: {{ week_labels | tojson }},
+            burnedData: {{ week_burned_data | tojson }}
+        };
+    </script>
+
+    <script src="{{ url_for('static', filename='calories.js') }}"></script>
 {% endblock %}
