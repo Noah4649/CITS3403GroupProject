@@ -4,17 +4,25 @@
 
 {% block content %}
 
+    <!-- FITTRACK-FEEDBACK-PAGE: Main wrapper that centers the feedback form on the page. -->
     <div class="auth-wrapper">
+
+        <!-- FITTRACK-FEEDBACK-PAGE: Card container for the feedback/report form and previous submissions. -->
         <div class="card auth-card shadow-sm">
 
+            <!-- FITTRACK-FEEDBACK-PAGE: Displays the FitTrack brand name at the top of the page. -->
             <div class="auth-brand">
                 <span class="brand-name">FitTrack</span>
             </div>
 
+            <!-- FITTRACK-FEEDBACK-PAGE: Page heading and short explanation for the user. -->
             <h1 class="auth-title">Feedback & Reports</h1>
             <p class="auth-subtitle">Send feedback or report an issue, then review your previous submissions.</p>
 
+            <!-- FITTRACK-FEEDBACK-FORM: Sends the selected feedback type and message to the Flask feedback route. -->
             <form method="POST" novalidate>
+
+                <!-- FITTRACK-FEEDBACK-FORM: Dropdown used to separate feedback, complaints, and reports in the backend. -->
                 <div class="mb-3">
                     <label for="type" class="form-label">Type</label>
                     <select id="type" name="type" class="form-control" required>
@@ -25,36 +33,78 @@
                     </select>
                 </div>
 
+                <!-- FITTRACK-FEEDBACK-FORM: Text area where the user writes their feedback/report message. -->
                 <div class="mb-4">
                     <label for="message" class="form-label">Message</label>
-                    <textarea id="message" name="message" class="form-control" rows="4" placeholder="Write your message here" required></textarea>
+                    <textarea
+                        id="message"
+                        name="message"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Write your message here"
+                        required></textarea>
                 </div>
 
+                <!-- FITTRACK-FEEDBACK-FORM: Submit button that posts the form data to the backend. -->
                 <button type="submit" class="btn btn-primary w-100 auth-submit-btn">
                     Submit
                 </button>
             </form>
 
+            <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Section for showing the current user's past feedback/report submissions. -->
             <div class="mt-4 pt-3" style="border-top: 1px solid var(--color-border);">
-                <h2 class="section-title">Your Previous Submissions</h2>
-                <button id="toggle-submissions" class="btn btn-outline-secondary w-100 mb-3">Hide Previous Submissions</button>
 
+                <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Heading for the previous submissions section. -->
+                <h2 class="section-title">Your Previous Submissions</h2>
+
+                <!-- FITTRACK-FEEDBACK-JS: Button controlled by feedback.js to hide/show previous submissions. -->
+                <button
+                    id="toggle-submissions"
+                    type="button"
+                    class="btn btn-outline-secondary w-100 mb-3"
+                    aria-controls="submissions-container"
+                    aria-expanded="true">
+                    Hide Previous Submissions
+                </button>
+
+                <!-- FITTRACK-FEEDBACK-JS: Container controlled by feedback.js when the user clicks the hide/show button. -->
                 <div id="submissions-container">
+
+                    <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Checks if the user has any previous submissions to display. -->
                     {% if submissions %}
+
+                        <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Loops through each feedback/report item sent from routes.py. -->
                         {% for item in submissions %}
+
+                            <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Card for one previous feedback/report submission. -->
                             <div class="card app-card mb-3">
                                 <div class="card-body">
-                                    <p class="mb-2"><strong>Type:</strong> {{ item.type|capitalize }}</p>
+
+                                    <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Displays the type, such as Feedback, Complaint, or Report. -->
+                                    <p class="mb-2">
+                                        <strong>Type:</strong> {{ item.type|capitalize }}
+                                    </p>
+
+                                    <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Displays the message the user submitted. -->
                                     <p class="mb-2">{{ item.message }}</p>
+
+                                    <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Displays when the user submitted the message. -->
                                     <p class="text-muted mb-0">
                                         {{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}
                                     </p>
+
                                 </div>
                             </div>
+
                         {% endfor %}
+
                     {% else %}
+
+                        <!-- FITTRACK-FEEDBACK-SUBMISSIONS: Message shown when the user has no previous submissions. -->
                         <p class="text-muted mb-0">You have not submitted anything yet.</p>
+
                     {% endif %}
+
                 </div>
             </div>
 
@@ -64,17 +114,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    document.getElementById('toggle-submissions').addEventListener('click', function() {
-        const container = document.getElementById('submissions-container');
-        const button = this;
-        if (container.style.display === 'none') {
-            container.style.display = 'block';
-            button.textContent = 'Hide Previous Submissions';
-        } else {
-            container.style.display = 'none';
-            button.textContent = 'Show Previous Submissions';
-        }
-    });
-</script>
+    <!-- FITTRACK-FEEDBACK-JS: Loads the external JavaScript file for the feedback page hide/show feature. -->
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
 {% endblock %}
