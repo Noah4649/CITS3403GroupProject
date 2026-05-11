@@ -823,6 +823,8 @@ def admin():
         abort(403)
 
     users = User.query.order_by(User.created_at.desc()).all()
+    reports = Feedback.query.filter_by(type='report').order_by(Feedback.created_at.desc()).all()
+    feedbacks = Feedback.query.filter(Feedback.type != 'report').order_by(Feedback.created_at.desc()).all()
 
     return render_template(
         'admin.html',

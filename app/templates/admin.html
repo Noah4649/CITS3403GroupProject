@@ -89,10 +89,8 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Reporter ID</th>
-                            <th>Reported User ID</th>
-                            <th>Reason</th>
-                            <th>Status</th>
+                            <th>User ID</th>
+                            <th>Message</th>
                             <th>Date</th>
                         </tr>
                     </thead>
@@ -101,22 +99,14 @@
                             {% for report in reports %}
                                 <tr>
                                     <td>{{ report.id }}</td>
-                                    <td>{{ report.reporter_id }}</td>
-                                    <td>{{ report.reported_user_id }}</td>
-                                    <td>{{ report.reason or '—' }}</td>
-                                    <td>
-                                        {% if report.status == 'open' %}
-                                            <span style="color: #ff6b6b; font-weight: 600;">Open</span>
-                                        {% else %}
-                                            <span style="color: var(--color-primary); font-weight: 600;">Resolved</span>
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ report.user_id }}</td>
+                                    <td style="text-align: left;">{{ report.message }}</td>
                                     <td>{{ report.created_at.strftime('%d %b %Y') }}</td>
                                 </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="6">No reports found.</td>
+                                <td colspan="4">No reports found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
