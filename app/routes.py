@@ -765,10 +765,17 @@ def admin():
         abort(403)
 
     users = User.query.order_by(User.created_at.desc()).all()
-    reports = Report.query.order_by(Report.created_at.desc()).all()
-    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
 
-    return render_template('admin.html',
+    reports = Feedback.query.filter_by(type='report') \
+        .order_by(Feedback.created_at.desc()) \
+        .all()
+
+    feedbacks = Feedback.query.filter(Feedback.type != 'report') \
+        .order_by(Feedback.created_at.desc()) \
+        .all()
+
+    return render_template(
+        'admin.html',
         users=users,
         reports=reports,
         feedbacks=feedbacks
