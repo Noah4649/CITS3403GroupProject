@@ -259,7 +259,8 @@
         window.caloriesChartData = {
             labels: {{ week_labels | tojson }},
             burnedData: {{ week_burned_data | tojson }},
-            consumedData: {{ week_consumed_data | tojson }}
+            consumedData: {{ week_consumed_data | tojson }},
+            todayIndex: {{ today_index | tojson }}
         };
     </script>
 

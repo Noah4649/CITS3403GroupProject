@@ -540,9 +540,18 @@ def calories():
     week_labels = []
     week_burned_data = []
     week_consumed_data = []
+    today_index = None
 
     for i in range(7):
         day = week_start + timedelta(days=i)
+
+        week_labels.append(day.strftime('%a'))
+
+        # If viewing this week, do not draw future days
+        if selected_week == 'this' and day > today:
+            week_burned_data.append(None)
+            week_consumed_data.append(None)
+            continue
 
         daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
             db.func.date(Workout.date) == day
@@ -555,9 +564,11 @@ def calories():
         daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
         daily_total_consumed = sum(meal.calories or 0 for meal in daily_meals)
 
-        week_labels.append(day.strftime('%a'))
         week_burned_data.append(daily_total_burned)
         week_consumed_data.append(daily_total_consumed)
+
+    if selected_week == 'this' and today not in (week_start, week_end):
+        today_index = today.weekday()
 
     return render_template(
         'calories-page.html',
@@ -573,7 +584,8 @@ def calories():
         week_end=week_end,
         week_labels=week_labels,
         week_burned_data=week_burned_data,
-        week_consumed_data=week_consumed_data
+        week_consumed_data=week_consumed_data,
+        today_index=today_index
     )
 
 

@@ -178,6 +178,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const chartGridColor = styles.getPropertyValue('--chart-grid-line').trim();
     const chartTextColor = styles.getPropertyValue('--color-text').trim();
 
+    const todayLinePlugin = {
+        id: 'todayLine',
+        afterDraw(chart) {
+            const todayIndex = window.caloriesChartData.todayIndex;
+
+            if (todayIndex === null || todayIndex === undefined) return;
+
+            const xScale = chart.scales.x;
+            const chartArea = chart.chartArea;
+            const ctx = chart.ctx;
+
+            const x = xScale.getPixelForValue(todayIndex);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
     new Chart(caloriesChart, {
         type: 'line',
         data: {
@@ -189,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     borderWidth: 2,
                     tension: 0,
                     fill: true,
+                    spanGaps: false,
                     backgroundColor: burnedFillColor,
                     borderColor: burnedLineColor,
                     pointBackgroundColor: burnedLineColor,
@@ -200,6 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     borderWidth: 2,
                     tension: 0,
                     fill: true,
+                    spanGaps: false,
                     backgroundColor: consumedFillColor,
                     borderColor: consumedLineColor,
                     pointBackgroundColor: consumedLineColor,
@@ -236,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             }
-        }
+        },
+        plugins: [todayLinePlugin]
     });
 });
