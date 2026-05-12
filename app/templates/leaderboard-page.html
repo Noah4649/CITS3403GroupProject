@@ -26,7 +26,7 @@
                         <ul class="cal-list mb-0">
                             {% if overall_leaderboard %}
                                 {% for user in overall_leaderboard %}
-                                    <li>{{ loop.index }}. {{ user.username }}</li>
+                                    <li>{{ user.rank }}. {{ user.username }}</li>
                                 {% endfor %}
                             {% else %}
                                 <li>No leaderboard data available yet.</li>
@@ -44,7 +44,7 @@
                 <div class="col-md-4">
                     <div class="card app-card h-100">
                         <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Workouts Completed</h3>
+                            <h3 class="section-title section-title-lg text-center">Total Workouts</h3>
                             <div class="table-responsive leaderboard-table-scroll">
                                 <table class="table text-center custom-table mb-0">
                                     <thead>
@@ -58,7 +58,7 @@
                                         {% if workouts_completed_leaderboard %}
                                             {% for entry in workouts_completed_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.workout_count }}</td>
                                                 </tr>
@@ -92,7 +92,7 @@
                                         {% if calories_leaderboard %}
                                             {% for entry in calories_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.total_calories }} kcal</td>
                                                 </tr>
@@ -126,7 +126,7 @@
                                         {% if training_time_leaderboard %}
                                             {% for entry in training_time_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.total_duration }} mins</td>
                                                 </tr>
@@ -167,7 +167,7 @@
                                         {% if bench_leaderboard %}
                                             {% for entry in bench_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
@@ -201,7 +201,7 @@
                                         {% if squat_leaderboard %}
                                             {% for entry in squat_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
@@ -235,7 +235,7 @@
                                         {% if deadlift_leaderboard %}
                                             {% for entry in deadlift_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
