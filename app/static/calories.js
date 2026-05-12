@@ -7,6 +7,34 @@ document.addEventListener('DOMContentLoaded', function () {
         return Number(value || 0).toFixed(1);
     }
 
+    function updateConsumedChartForToday(totalConsumed) {
+        if (!window.caloriesChart || !window.caloriesChartData) {
+            console.warn('Calories chart or chart data is missing.');
+            return;
+        }
+
+        const currentDayIndex = window.caloriesChartData.currentDayIndex;
+
+        if (currentDayIndex === null || currentDayIndex === undefined) {
+            console.warn('Current day index is missing. Chart will only update on This week.');
+            return;
+        }
+
+        const consumedDataset = window.caloriesChart.data.datasets.find(
+            dataset => dataset.label === 'Calories Consumed'
+        );
+
+        if (!consumedDataset) {
+            console.warn('Calories Consumed dataset could not be found.');
+            return;
+        }
+
+        consumedDataset.data[currentDayIndex] = Number(totalConsumed || 0);
+
+        window.caloriesChart.update();
+    }
+
+
     if (!addMealForm || !mealsTableBody) return;
 
     addMealForm.addEventListener('submit', function (event) {
@@ -81,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
                 document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
                 document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
+
+                // Update calories chart totals
+                updateConsumedChartForToday(totals.total_calories_consumed);
             }
 
             addMealForm.reset();
@@ -137,11 +168,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('net-calories').textContent = formatNumber(totals.net_calories);
 
                 document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
-                document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
                 document.getElementById('table-total-protein').textContent = `${formatNumber(totals.total_protein)} g`;
                 document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
                 document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
                 document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
+
+                // Update calories chart totals
+                updateConsumedChartForToday(totals.total_calories_consumed);
             }
         })
         .catch(error => {
@@ -203,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    new Chart(caloriesChart, {
+    window.caloriesChart = new Chart(caloriesChart, {
         type: 'line',
         data: {
             labels: window.caloriesChartData.labels,

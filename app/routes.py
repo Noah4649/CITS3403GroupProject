@@ -534,13 +534,16 @@ def calories():
     else:
         selected_week = 'this'
         week_start = start_of_this_week
+    
+    current_day_index = today.weekday() if selected_week == 'this' else None
 
     week_end = week_start + timedelta(days=6)
 
     week_labels = []
     week_burned_data = []
     week_consumed_data = []
-    today_index = None
+
+    today_index = today.weekday() if selected_week == 'this' else None
 
     for i in range(7):
         day = week_start + timedelta(days=i)
@@ -567,8 +570,6 @@ def calories():
         week_burned_data.append(daily_total_burned)
         week_consumed_data.append(daily_total_consumed)
 
-    if selected_week == 'this' and today not in (week_start, week_end):
-        today_index = today.weekday()
 
     return render_template(
         'calories-page.html',
@@ -585,7 +586,8 @@ def calories():
         week_labels=week_labels,
         week_burned_data=week_burned_data,
         week_consumed_data=week_consumed_data,
-        today_index=today_index
+        today_index=today_index,
+        current_day_index=current_day_index
     )
 
 
