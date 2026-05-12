@@ -928,7 +928,7 @@ def leaderboard():
 
     return render_template(
         'leaderboard-page.html',
-        overall_leaderboard=overall_leaderboard,
+        overall_leaderboard = add_overall_ranks(overall_leaderboard),
         calories_leaderboard=calories_leaderboard,
         workouts_completed_leaderboard=workouts_completed_leaderboard,
         training_time_leaderboard=training_time_leaderboard,
