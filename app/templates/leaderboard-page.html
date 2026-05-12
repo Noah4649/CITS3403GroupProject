@@ -20,18 +20,35 @@
             <div class="card app-card">
                 <div class="card-body">
                     <h3 class="section-title section-title-lg text-center">Overall Leaderboard</h3>
-                    <p class="section-title text-center">Users across all tracked activity.</p>
+                    <p class="section-title text-center">
+                        Ranked by average position across calories burned, workouts completed, and training time.
+                    </p>
 
-                    <div class="leaderboard-list-scroll">
-                        <ul class="cal-list mb-0">
-                            {% if overall_leaderboard %}
-                                {% for user in overall_leaderboard %}
-                                    <li>{{ user.rank }}. {{ user.username }}</li>
-                                {% endfor %}
-                            {% else %}
-                                <li>No leaderboard data available yet.</li>
-                            {% endif %}
-                        </ul>
+                    <div class="leaderboard-table-scroll">
+                        <table class="table text-center custom-table overall-leaderboard-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Username</th>
+                                    <th>Average Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if overall_leaderboard %}
+                                    {% for entry in overall_leaderboard %}
+                                        <tr>
+                                            <td>{{ entry.rank }}</td>
+                                            <td>{{ entry.username }}</td>
+                                            <td>{{ "%.2f"|format(entry.average_rank) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3">No leaderboard data available yet.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
