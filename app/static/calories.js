@@ -299,4 +299,60 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         plugins: [todayLinePlugin]
     });
+    
+// ─── AJAX WEEKLY CHART UPDATE ──────────────────────────
+    const weekSelector = document.getElementById('week');
+    const weeklyCaloriesTitle = document.getElementById('weekly-calories-title');
+
+    if (weekSelector) {
+        weekSelector.addEventListener('change', function () {
+            const selectedWeek = weekSelector.value;
+
+            fetch(`/api/calories-chart-data?week=${selectedWeek}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Could not update calories chart.');
+                        return;
+                    }
+
+                    // Update stored chart data
+                    window.caloriesChartData.labels = data.labels;
+                    window.caloriesChartData.burnedData = data.burnedData;
+                    window.caloriesChartData.consumedData = data.consumedData;
+                    window.caloriesChartData.todayIndex = data.todayIndex;
+                    window.caloriesChartData.currentDayIndex = data.currentDayIndex;
+
+                    // Update Chart.js data
+                    window.caloriesChart.data.labels = data.labels;
+
+                    const burnedDataset = window.caloriesChart.data.datasets.find(
+                        dataset => dataset.label === 'Calories Burned'
+                    );
+
+                    const consumedDataset = window.caloriesChart.data.datasets.find(
+                        dataset => dataset.label === 'Calories Consumed'
+                    );
+
+                    if (burnedDataset) {
+                        burnedDataset.data = data.burnedData;
+                    }
+
+                    if (consumedDataset) {
+                        consumedDataset.data = data.consumedData;
+                    }
+
+                    // Update chart title
+                    if (weeklyCaloriesTitle) {
+                        weeklyCaloriesTitle.textContent = `Weekly Calories: ${data.weekStart} – ${data.weekEnd}`;
+                    }
+
+                    window.caloriesChart.update();
+                })
+                .catch(error => {
+                    console.error('Error updating calories chart:', error);
+                    alert('Something went wrong while updating the chart.');
+                });
+        });
+    }
 });

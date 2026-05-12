@@ -227,14 +227,14 @@
         <section class="mb-4">
             <div class="card app-card h-100 text-center">
                 <div class="card-body">
-                    <h2 class="section-title section-title-lg text-center">
+                    <h2 id="weekly-calories-title" class="section-title section-title-lg text-center">
                         Weekly Calories: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
                     </h2>
 
                     <form method="GET" action="{{ url_for('main.calories') }}" class="mb-3">
                         <label for="week" class="form-label">Select week</label>
 
-                        <select name="week" id="week" class="form-select" onchange="this.form.submit()">
+                        <select name="week" id="week" class="form-select">
                             <option value="this" {% if selected_week == 'this' %}selected{% endif %}>This week</option>
                             <option value="last" {% if selected_week == 'last' %}selected{% endif %}>Last week</option>
                             <option value="two_weeks_ago" {% if selected_week == 'two_weeks_ago' %}selected{% endif %}>Two weeks ago</option>
