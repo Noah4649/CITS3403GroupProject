@@ -228,7 +228,7 @@
             <div class="card app-card h-100 text-center">
                 <div class="card-body">
                     <h2 class="section-title section-title-lg text-center">
-                        Calories Burnt: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
+                        Weekly Calories: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
                     </h2>
 
                     <form method="GET" action="{{ url_for('main.calories') }}" class="mb-3">
@@ -252,13 +252,14 @@
 {% endblock %}
 
 {% block extra_scripts %}
-    <!-- Calories Burnt Graph -->
+    <!-- Weekly Calories Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         window.caloriesChartData = {
             labels: {{ week_labels | tojson }},
-            burnedData: {{ week_burned_data | tojson }}
+            burnedData: {{ week_burned_data | tojson }},
+            consumedData: {{ week_consumed_data | tojson }}
         };
     </script>
 

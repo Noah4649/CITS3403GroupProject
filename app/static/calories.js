@@ -171,8 +171,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const styles = getComputedStyle(document.documentElement);
 
-    const chartLineColor = styles.getPropertyValue('--chart-calories-line').trim();
-    const chartFillColor = styles.getPropertyValue('--chart-calories-fill').trim();
+    const burnedLineColor = styles.getPropertyValue('--chart-calories-line').trim();
+    const burnedFillColor = styles.getPropertyValue('--chart-calories-fill').trim();
+    const consumedLineColor = styles.getPropertyValue('--chart-consumed-line').trim();
+    const consumedFillColor = styles.getPropertyValue('--chart-consumed-fill').trim();
     const chartGridColor = styles.getPropertyValue('--chart-grid-line').trim();
     const chartTextColor = styles.getPropertyValue('--color-text').trim();
 
@@ -180,17 +182,30 @@ document.addEventListener('DOMContentLoaded', function () {
         type: 'line',
         data: {
             labels: window.caloriesChartData.labels,
-            datasets: [{
-                label: 'Calories Burned',
-                data: window.caloriesChartData.burnedData,
-                borderWidth: 2,
-                tension: 0,
-                fill: true,
-                backgroundColor: chartFillColor,
-                borderColor: chartLineColor,
-                pointBackgroundColor: chartLineColor,
-                pointBorderColor: chartLineColor
-            }]
+            datasets: [
+                {
+                    label: 'Calories Burned',
+                    data: window.caloriesChartData.burnedData,
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: true,
+                    backgroundColor: burnedFillColor,
+                    borderColor: burnedLineColor,
+                    pointBackgroundColor: burnedLineColor,
+                    pointBorderColor: burnedLineColor
+                },
+                {
+                    label: 'Calories Consumed',
+                    data: window.caloriesChartData.consumedData,
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: true,
+                    backgroundColor: consumedFillColor,
+                    borderColor: consumedLineColor,
+                    pointBackgroundColor: consumedLineColor,
+                    pointBorderColor: consumedLineColor
+                }
+            ]
         },
         options: {
             responsive: true,
