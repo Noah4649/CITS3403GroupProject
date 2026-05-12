@@ -724,6 +724,45 @@ def leaderboard():
         db.func.sum(Workout.calories_burned).desc()
     ).limit(10).all()
 
+    # Total calories burned leaderboard
+    calories_leaderboard = db.session.query(
+        User.username,
+        db.func.sum(Workout.calories_burned).label('total_calories')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.text('total_calories DESC')
+    ).limit(10).all()
+
+    # Workouts completed leaderboard
+    workouts_completed_leaderboard = db.session.query(
+        User.username,
+        db.func.count(Workout.id).label('workout_count')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.text('workout_count DESC')
+    ).limit(10).all()
+
+    # Total training time leaderboard
+    training_time_leaderboard = db.session.query(
+        User.username,
+        db.func.sum(Workout.duration_mins).label('total_duration')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.text('total_duration DESC')
+    ).limit(10).all()
+
     bench_leaderboard = db.session.query(
         User.username,
         db.func.max(Exercise.weight_kg).label('weight_kg')
@@ -766,6 +805,9 @@ def leaderboard():
     return render_template(
         'leaderboard-page.html',
         overall_leaderboard=overall_leaderboard,
+        calories_leaderboard=calories_leaderboard,
+        workouts_completed_leaderboard=workouts_completed_leaderboard,
+        training_time_leaderboard=training_time_leaderboard,
         bench_leaderboard=bench_leaderboard,
         squat_leaderboard=squat_leaderboard,
         deadlift_leaderboard=deadlift_leaderboard
