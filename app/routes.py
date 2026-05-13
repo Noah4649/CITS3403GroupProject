@@ -534,23 +534,42 @@ def calories():
     else:
         selected_week = 'this'
         week_start = start_of_this_week
+    
+    current_day_index = today.weekday() if selected_week == 'this' else None
 
     week_end = week_start + timedelta(days=6)
 
     week_labels = []
     week_burned_data = []
+    week_consumed_data = []
+
+    today_index = today.weekday() if selected_week == 'this' else None
 
     for i in range(7):
         day = week_start + timedelta(days=i)
+
+        week_labels.append(day.strftime('%a'))
+
+        # If viewing this week, do not draw future days
+        if selected_week == 'this' and day > today:
+            week_burned_data.append(None)
+            week_consumed_data.append(None)
+            continue
 
         daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
             db.func.date(Workout.date) == day
         ).all()
 
-        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == day
+        ).all()
 
-        week_labels.append(day.strftime('%a'))
+        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_total_consumed = sum(meal.calories or 0 for meal in daily_meals)
+
         week_burned_data.append(daily_total_burned)
+        week_consumed_data.append(daily_total_consumed)
+
 
     return render_template(
         'calories-page.html',
@@ -565,9 +584,74 @@ def calories():
         week_start=week_start,
         week_end=week_end,
         week_labels=week_labels,
-        week_burned_data=week_burned_data
+        week_burned_data=week_burned_data,
+        week_consumed_data=week_consumed_data,
+        today_index=today_index,
+        current_day_index=current_day_index
     )
 
+# ─── CALORIES CHART DATA API ────────────────────────────
+@main.route('/api/calories-chart-data')
+@login_required
+def calories_chart_data():
+    today = date.today()
+
+    selected_week = request.args.get('week', 'this')
+    start_of_this_week = today - timedelta(days=today.weekday())
+
+    if selected_week == 'last':
+        week_start = start_of_this_week - timedelta(days=7)
+    elif selected_week == 'two_weeks_ago':
+        week_start = start_of_this_week - timedelta(days=14)
+    else:
+        selected_week = 'this'
+        week_start = start_of_this_week
+
+    week_end = week_start + timedelta(days=6)
+
+    week_labels = []
+    week_burned_data = []
+    week_consumed_data = []
+
+    today_index = today.weekday() if selected_week == 'this' else None
+    current_day_index = today.weekday() if selected_week == 'this' else None
+
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+
+        week_labels.append(day.strftime('%a'))
+
+        # If viewing this week, do not draw future days
+        if selected_week == 'this' and day > today:
+            week_burned_data.append(None)
+            week_consumed_data.append(None)
+            continue
+
+        daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Workout.date) == day
+        ).all()
+
+        daily_meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == day
+        ).all()
+
+        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_total_consumed = sum(meal.calories or 0 for meal in daily_meals)
+
+        week_burned_data.append(daily_total_burned)
+        week_consumed_data.append(daily_total_consumed)
+
+    return jsonify({
+        'success': True,
+        'selectedWeek': selected_week,
+        'weekStart': week_start.strftime('%d %b'),
+        'weekEnd': week_end.strftime('%d %b'),
+        'labels': week_labels,
+        'burnedData': week_burned_data,
+        'consumedData': week_consumed_data,
+        'todayIndex': today_index,
+        'currentDayIndex': current_day_index
+    })
 
 # ─── ADD MEAL API ───────────────────────────────────────
 @main.route('/api/add-meal', methods=['POST'])
@@ -720,10 +804,141 @@ def delete_meal(meal_id):
 @main.route('/leaderboard')
 @login_required
 def leaderboard():
-    overall_leaderboard = db.session.query(User).join(Workout).group_by(User.id).order_by(
-        db.func.sum(Workout.calories_burned).desc()
+
+    def add_competition_ranks(entries, value_field):
+        ranked_entries = []
+        previous_value = None
+        current_rank = 0
+
+        for position, entry in enumerate(entries, start=1):
+            value = getattr(entry, value_field)
+
+            if value != previous_value:
+                current_rank = position
+
+            ranked_entries.append({
+                'rank': current_rank,
+                'username': entry.username,
+                value_field: value
+            })
+
+            previous_value = value
+
+        return ranked_entries
+
+    def add_overall_ranks(entries):
+        ranked_entries = []
+        previous_value = None
+        current_rank = 0
+
+        for position, entry in enumerate(entries, start=1):
+            value = entry['average_rank']
+
+            if value != previous_value:
+                current_rank = position
+
+            entry['rank'] = current_rank
+            ranked_entries.append(entry)
+
+            previous_value = value
+
+        return ranked_entries
+
+    # Total calories burned leaderboard
+    calories_leaderboard = db.session.query(
+        User.username,
+        db.func.sum(Workout.calories_burned).label('total_calories')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.sum(Workout.calories_burned).desc(),
+        User.username.asc()
     ).limit(10).all()
 
+    calories_leaderboard = add_competition_ranks(
+        calories_leaderboard,
+        'total_calories'
+    )
+
+    # Workouts completed leaderboard
+    workouts_completed_leaderboard = db.session.query(
+        User.username,
+        db.func.count(Workout.id).label('workout_count')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.count(Workout.id).desc(),
+        User.username.asc()
+    ).limit(10).all()
+
+    workouts_completed_leaderboard = add_competition_ranks(
+        workouts_completed_leaderboard,
+        'workout_count'
+    )
+
+    # Total training time leaderboard
+    training_time_leaderboard = db.session.query(
+        User.username,
+        db.func.sum(Workout.duration_mins).label('total_duration')
+    ).join(
+        Workout,
+        Workout.user_id == User.id
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.sum(Workout.duration_mins).desc(),
+        User.username.asc()
+    ).limit(10).all()
+
+    training_time_leaderboard = add_competition_ranks(
+        training_time_leaderboard,
+        'total_duration'
+    )
+
+    # ─── Overall leaderboard based on average rank ───────────
+    leaderboard_scores = {}
+
+    # Add calories leaderboard rankings
+    for entry in calories_leaderboard:
+        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
+
+    # Add workouts completed leaderboard rankings
+    for entry in workouts_completed_leaderboard:
+        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
+
+    # Add training time leaderboard rankings
+    for entry in training_time_leaderboard:
+        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
+
+    overall_leaderboard = []
+
+    for username, ranks in leaderboard_scores.items():
+        average_rank = sum(ranks) / len(ranks)
+
+        overall_leaderboard.append({
+            'username': username,
+            'average_rank': average_rank,
+            'categories_counted': len(ranks)
+        })
+
+    overall_leaderboard = sorted(
+        overall_leaderboard,
+        key=lambda entry: (
+            entry['average_rank'],
+            -entry['categories_counted'],
+            entry['username']
+        )
+    )[:10]
+
+    overall_leaderboard = add_overall_ranks(overall_leaderboard)
+
+    # Bench press leaderboard
     bench_leaderboard = db.session.query(
         User.username,
         db.func.max(Exercise.weight_kg).label('weight_kg')
@@ -735,8 +950,19 @@ def leaderboard():
         Exercise.workout_id == Workout.id
     ).filter(
         db.func.lower(Exercise.name).like('%bench press%')
-    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.max(Exercise.weight_kg).desc(),
+        User.username.asc()
+    ).limit(10).all()
 
+    bench_leaderboard = add_competition_ranks(
+        bench_leaderboard,
+        'weight_kg'
+    )
+
+    # Squat leaderboard
     squat_leaderboard = db.session.query(
         User.username,
         db.func.max(Exercise.weight_kg).label('weight_kg')
@@ -748,8 +974,19 @@ def leaderboard():
         Exercise.workout_id == Workout.id
     ).filter(
         db.func.lower(Exercise.name).like('%squat%')
-    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.max(Exercise.weight_kg).desc(),
+        User.username.asc()
+    ).limit(10).all()
 
+    squat_leaderboard = add_competition_ranks(
+        squat_leaderboard,
+        'weight_kg'
+    )
+
+    # Deadlift leaderboard
     deadlift_leaderboard = db.session.query(
         User.username,
         db.func.max(Exercise.weight_kg).label('weight_kg')
@@ -761,11 +998,24 @@ def leaderboard():
         Exercise.workout_id == Workout.id
     ).filter(
         db.func.lower(Exercise.name).like('%deadlift%')
-    ).group_by(User.id).order_by(db.text('weight_kg DESC')).limit(10).all()
+    ).group_by(
+        User.id
+    ).order_by(
+        db.func.max(Exercise.weight_kg).desc(),
+        User.username.asc()
+    ).limit(10).all()
+
+    deadlift_leaderboard = add_competition_ranks(
+        deadlift_leaderboard,
+        'weight_kg'
+    )
 
     return render_template(
         'leaderboard-page.html',
-        overall_leaderboard=overall_leaderboard,
+        overall_leaderboard = add_overall_ranks(overall_leaderboard),
+        calories_leaderboard=calories_leaderboard,
+        workouts_completed_leaderboard=workouts_completed_leaderboard,
+        training_time_leaderboard=training_time_leaderboard,
         bench_leaderboard=bench_leaderboard,
         squat_leaderboard=squat_leaderboard,
         deadlift_leaderboard=deadlift_leaderboard

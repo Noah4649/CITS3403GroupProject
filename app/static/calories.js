@@ -7,6 +7,34 @@ document.addEventListener('DOMContentLoaded', function () {
         return Number(value || 0).toFixed(1);
     }
 
+    function updateConsumedChartForToday(totalConsumed) {
+        if (!window.caloriesChart || !window.caloriesChartData) {
+            console.warn('Calories chart or chart data is missing.');
+            return;
+        }
+
+        const currentDayIndex = window.caloriesChartData.currentDayIndex;
+
+        if (currentDayIndex === null || currentDayIndex === undefined) {
+            console.warn('Current day index is missing. Chart will only update on This week.');
+            return;
+        }
+
+        const consumedDataset = window.caloriesChart.data.datasets.find(
+            dataset => dataset.label === 'Calories Consumed'
+        );
+
+        if (!consumedDataset) {
+            console.warn('Calories Consumed dataset could not be found.');
+            return;
+        }
+
+        consumedDataset.data[currentDayIndex] = Number(totalConsumed || 0);
+
+        window.caloriesChart.update();
+    }
+
+
     if (!addMealForm || !mealsTableBody) return;
 
     addMealForm.addEventListener('submit', function (event) {
@@ -81,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
                 document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
                 document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
+
+                // Update calories chart totals
+                updateConsumedChartForToday(totals.total_calories_consumed);
             }
 
             addMealForm.reset();
@@ -137,11 +168,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('net-calories').textContent = formatNumber(totals.net_calories);
 
                 document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
-                document.getElementById('table-total-calories').textContent = `${formatNumber(totals.total_calories_consumed)} kcal`;
                 document.getElementById('table-total-protein').textContent = `${formatNumber(totals.total_protein)} g`;
                 document.getElementById('table-total-carbs').textContent = `${formatNumber(totals.total_carbs)} g`;
                 document.getElementById('table-total-fats').textContent = `${formatNumber(totals.total_fats)} g`;
                 document.getElementById('table-total-water').textContent = `${formatNumber(totals.total_water_ml)} ml`;
+
+                // Update calories chart totals
+                updateConsumedChartForToday(totals.total_calories_consumed);
             }
         })
         .catch(error => {
@@ -171,26 +204,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const styles = getComputedStyle(document.documentElement);
 
-    const chartLineColor = styles.getPropertyValue('--chart-calories-line').trim();
-    const chartFillColor = styles.getPropertyValue('--chart-calories-fill').trim();
+    const burnedLineColor = styles.getPropertyValue('--chart-calories-line').trim();
+    const burnedFillColor = styles.getPropertyValue('--chart-calories-fill').trim();
+    const consumedLineColor = styles.getPropertyValue('--chart-consumed-line').trim();
+    const consumedFillColor = styles.getPropertyValue('--chart-consumed-fill').trim();
     const chartGridColor = styles.getPropertyValue('--chart-grid-line').trim();
     const chartTextColor = styles.getPropertyValue('--color-text').trim();
 
-    new Chart(caloriesChart, {
+    const todayLinePlugin = {
+        id: 'todayLine',
+        afterDraw(chart) {
+            const todayIndex = window.caloriesChartData.todayIndex;
+
+            if (todayIndex === null || todayIndex === undefined) return;
+
+            const xScale = chart.scales.x;
+            const chartArea = chart.chartArea;
+            const ctx = chart.ctx;
+
+            const x = xScale.getPixelForValue(todayIndex);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
+    window.caloriesChart = new Chart(caloriesChart, {
         type: 'line',
         data: {
             labels: window.caloriesChartData.labels,
-            datasets: [{
-                label: 'Calories Burned',
-                data: window.caloriesChartData.burnedData,
-                borderWidth: 2,
-                tension: 0,
-                fill: true,
-                backgroundColor: chartFillColor,
-                borderColor: chartLineColor,
-                pointBackgroundColor: chartLineColor,
-                pointBorderColor: chartLineColor
-            }]
+            datasets: [
+                {
+                    label: 'Calories Burned',
+                    data: window.caloriesChartData.burnedData,
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: true,
+                    spanGaps: false,
+                    backgroundColor: burnedFillColor,
+                    borderColor: burnedLineColor,
+                    pointBackgroundColor: burnedLineColor,
+                    pointBorderColor: burnedLineColor
+                },
+                {
+                    label: 'Calories Consumed',
+                    data: window.caloriesChartData.consumedData,
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: true,
+                    spanGaps: false,
+                    backgroundColor: consumedFillColor,
+                    borderColor: consumedLineColor,
+                    pointBackgroundColor: consumedLineColor,
+                    pointBorderColor: consumedLineColor
+                }
+            ]
         },
         options: {
             responsive: true,
@@ -221,6 +296,63 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             }
-        }
+        },
+        plugins: [todayLinePlugin]
     });
+    
+// ─── AJAX WEEKLY CHART UPDATE ──────────────────────────
+    const weekSelector = document.getElementById('week');
+    const weeklyCaloriesTitle = document.getElementById('weekly-calories-title');
+
+    if (weekSelector) {
+        weekSelector.addEventListener('change', function () {
+            const selectedWeek = weekSelector.value;
+
+            fetch(`/api/calories-chart-data?week=${selectedWeek}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Could not update calories chart.');
+                        return;
+                    }
+
+                    // Update stored chart data
+                    window.caloriesChartData.labels = data.labels;
+                    window.caloriesChartData.burnedData = data.burnedData;
+                    window.caloriesChartData.consumedData = data.consumedData;
+                    window.caloriesChartData.todayIndex = data.todayIndex;
+                    window.caloriesChartData.currentDayIndex = data.currentDayIndex;
+
+                    // Update Chart.js data
+                    window.caloriesChart.data.labels = data.labels;
+
+                    const burnedDataset = window.caloriesChart.data.datasets.find(
+                        dataset => dataset.label === 'Calories Burned'
+                    );
+
+                    const consumedDataset = window.caloriesChart.data.datasets.find(
+                        dataset => dataset.label === 'Calories Consumed'
+                    );
+
+                    if (burnedDataset) {
+                        burnedDataset.data = data.burnedData;
+                    }
+
+                    if (consumedDataset) {
+                        consumedDataset.data = data.consumedData;
+                    }
+
+                    // Update chart title
+                    if (weeklyCaloriesTitle) {
+                        weeklyCaloriesTitle.textContent = `Weekly Calories: ${data.weekStart} – ${data.weekEnd}`;
+                    }
+
+                    window.caloriesChart.update();
+                })
+                .catch(error => {
+                    console.error('Error updating calories chart:', error);
+                    alert('Something went wrong while updating the chart.');
+                });
+        });
+    }
 });

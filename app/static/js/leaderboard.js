@@ -1,7 +1,7 @@
 /**
  * leaderboard.js
- * - Global username filter across the overall list and the three lift tables.
- * - Click-to-sort column headers on each lift table (rank / username / weight).
+ * - Global username filter across all leaderboards.
+ * - Click-to-sort column headers (rank / username / numeric stat).
  * - Highlights the current user's rows.
  */
 
@@ -13,20 +13,11 @@
 
     const currentUsername = (page.dataset.currentUsername || '').toLowerCase();
     const filterEl        = document.getElementById('leaderboard-filter');
-    const overallList     = document.getElementById('overall-leaderboard');
     const tables          = Array.from(document.querySelectorAll('.js-sortable-leaderboard'));
 
     /* ── Highlight current user on initial render ────────── */
     const highlightCurrentUser = () => {
         if (!currentUsername) return;
-
-        if (overallList) {
-            overallList.querySelectorAll('li[data-username]').forEach((li) => {
-                if (li.dataset.username === currentUsername) {
-                    li.classList.add('is-current-user');
-                }
-            });
-        }
 
         tables.forEach((table) => {
             table.querySelectorAll('tbody tr[data-username]').forEach((tr) => {
@@ -40,20 +31,6 @@
     /* ── Filter across all leaderboards ──────────────────── */
     const applyFilter = () => {
         const term = (filterEl.value || '').trim().toLowerCase();
-
-        if (overallList) {
-            const items = overallList.querySelectorAll('li[data-username]');
-            let visible = 0;
-            items.forEach((li) => {
-                const matches = !term || (li.dataset.username || '').includes(term);
-                li.hidden = !matches;
-                if (matches) visible += 1;
-            });
-            const noResults = overallList.parentElement.querySelector('.leaderboard-no-results');
-            if (noResults && items.length > 0) {
-                noResults.hidden = visible !== 0;
-            }
-        }
 
         tables.forEach((table) => {
             const rows = table.querySelectorAll('tbody tr[data-username]');
