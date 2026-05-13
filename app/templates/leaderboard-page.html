@@ -20,24 +20,150 @@
             <div class="card app-card">
                 <div class="card-body">
                     <h3 class="section-title section-title-lg text-center">Overall Leaderboard</h3>
-                    <p class="section-title text-center">Users across all tracked activity.</p>
+                    <p class="section-title text-center">
+                        Ranked by average position across calories burned, workouts completed, and training time.
+                    </p>
 
-                    <div class="leaderboard-list-scroll">
-                        <ul class="cal-list mb-0">
-                            {% if overall_leaderboard %}
-                                {% for user in overall_leaderboard %}
-                                    <li>{{ loop.index }}. {{ user.username }}</li>
-                                {% endfor %}
-                            {% else %}
-                                <li>No leaderboard data available yet.</li>
-                            {% endif %}
-                        </ul>
+                    <div class="leaderboard-table-scroll">
+                        <table class="table text-center custom-table overall-leaderboard-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Username</th>
+                                    <th>Average Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if overall_leaderboard %}
+                                    {% for entry in overall_leaderboard %}
+                                        <tr>
+                                            <td>{{ entry.rank }}</td>
+                                            <td>{{ entry.username }}</td>
+                                            <td>{{ "%.2f"|format(entry.average_rank) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3">No leaderboard data available yet.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </section>
+        
+        <!-- General fitness leaderboards -->
+        <section class="mb-3">
+            <div class="row g-3">
 
-        <!-- Three smaller leaderboards -->
+                <div class="col-md-4">
+                    <div class="card app-card h-100">
+                        <div class="card-body">
+                            <h3 class="section-title section-title-lg text-center">Total Workouts</h3>
+                            <div class="table-responsive leaderboard-table-scroll">
+                                <table class="table text-center custom-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Username</th>
+                                            <th>Workouts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if workouts_completed_leaderboard %}
+                                            {% for entry in workouts_completed_leaderboard %}
+                                                <tr>
+                                                    <td>{{ entry.rank }}</td>
+                                                    <td>{{ entry.username }}</td>
+                                                    <td>{{ entry.workout_count }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="3">No workout data available.</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card app-card h-100">
+                        <div class="card-body">
+                            <h3 class="section-title section-title-lg text-center">Calories Burned</h3>
+                            <div class="table-responsive leaderboard-table-scroll">
+                                <table class="table text-center custom-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Username</th>
+                                            <th>Calories</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if calories_leaderboard %}
+                                            {% for entry in calories_leaderboard %}
+                                                <tr>
+                                                    <td>{{ entry.rank }}</td>
+                                                    <td>{{ entry.username }}</td>
+                                                    <td>{{ entry.total_calories }} kcal</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="3">No calorie data available.</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card app-card h-100">
+                        <div class="card-body">
+                            <h3 class="section-title section-title-lg text-center">Training Time</h3>
+                            <div class="table-responsive leaderboard-table-scroll">
+                                <table class="table text-center custom-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Username</th>
+                                            <th>Minutes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if training_time_leaderboard %}
+                                            {% for entry in training_time_leaderboard %}
+                                                <tr>
+                                                    <td>{{ entry.rank  }}</td>
+                                                    <td>{{ entry.username }}</td>
+                                                    <td>{{ entry.total_duration }} mins</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="3">No training time data available.</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Strength leaderboards -->
         <section class="mb-3">
             <div class="row g-3">
 
@@ -58,7 +184,7 @@
                                         {% if bench_leaderboard %}
                                             {% for entry in bench_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
@@ -92,7 +218,7 @@
                                         {% if squat_leaderboard %}
                                             {% for entry in squat_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
@@ -126,7 +252,7 @@
                                         {% if deadlift_leaderboard %}
                                             {% for entry in deadlift_leaderboard %}
                                                 <tr>
-                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ entry.rank  }}</td>
                                                     <td>{{ entry.username }}</td>
                                                     <td>{{ entry.weight_kg }} kg</td>
                                                 </tr>
