@@ -82,6 +82,10 @@ class Achievement(db.Model):
     badge_icon = db.Column(db.String(100))
     earned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'title', name='unique_user_achievement'),
+    )
+
 # ─── CHALLENGES ─────────────────────────────────────────
 class Challenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)

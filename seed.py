@@ -289,29 +289,6 @@ def seed():
 
         db.session.commit()
         print(f"  Created goals for {len(users) - 1} users.")
-
-        # ─── ACHIEVEMENTS ───────────────────────────────────────
-        print("Seeding achievements...")
-
-        achievement_templates = [
-            {"title": "First Workout", "description": "Completed your first workout.", "badge_icon": "🏋️"},
-            {"title": "Week Warrior", "description": "Worked out 7 days in a row.", "badge_icon": "🔥"},
-            {"title": "Calorie Crusher", "description": "Burned over 500 kcal in a single session.", "badge_icon": "⚡"},
-            {"title": "Consistency King", "description": "Logged workouts for 30 days.", "badge_icon": "👑"},
-            {"title": "Protein Pro", "description": "Hit your protein goal 7 days in a row.", "badge_icon": "💪"},
-        ]
-
-        for user in users[1:]:
-            earned = random.sample(achievement_templates, random.randint(1, 3))
-            for a in earned:
-                db.session.add(Achievement(
-                    user_id=user.id,
-                    title=a["title"],
-                    description=a["description"],
-                    badge_icon=a["badge_icon"],
-                    earned_at=datetime.utcnow() - timedelta(days=random.randint(1, 60))
-                ))
-
         db.session.commit()
         print(f"  Created achievements for {len(users) - 1} users.")
 
