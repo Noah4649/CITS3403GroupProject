@@ -6,11 +6,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const emptyMessage = document.getElementById('empty-feed-message');
-    const postUsernameInput = document.getElementById('post-username');
     const postContentInput = document.getElementById('post-content');
     const addPostBtn = document.getElementById('add-post-btn');
 
-    const currentUsername = feedContainer.dataset.currentUsername || '';
+    // Friend feed ownership uses immutable user IDs; usernames are display text only.
+    const currentUserId = feedContainer.dataset.currentUserId || '';
+    const currentDisplayUsername = feedContainer.dataset.currentDisplayUsername || '';
 
     let postCount = 0;
 
@@ -43,10 +44,11 @@ document.addEventListener('DOMContentLoaded', function () {
         emptyMessage.style.display = postCards.length ? 'none' : 'block';
     }
 
-    function createCommentItem(commenter, text, timestamp) {
+    function createCommentItem(ownerId, commenter, text, timestamp) {
         const comment = document.createElement('div');
 
         comment.className = 'mb-3 border-bottom pb-2';
+        comment.dataset.ownerId = ownerId;
         comment.innerHTML =
             '<strong>' + escapeHtml(commenter) + '</strong> ' +
             '<span class="text-muted small">' + escapeHtml(timestamp) + '</span>' +
@@ -55,19 +57,92 @@ document.addEventListener('DOMContentLoaded', function () {
         return comment;
     }
 
-    function createPostCard(author, content, isOwner) {
-        const postId = 'post-' + (++postCount);
+    async function saveFeedPost(content) {
+        // Persist manual feed posts so refreshes keep text-only updates.
+        const response = await fetch('/friends-feed/posts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: content })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to save post.');
+        }
+
+        return data.post;
+    }
+
+    async function deleteFeedPost(feedPostId) {
+        const response = await fetch('/friends-feed/posts/' + encodeURIComponent(feedPostId), {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to delete post.');
+        }
+    }
+
+    async function saveWorkoutComment(workoutId, text) {
+        // Persist comments for saved workout posts so other users see them after refresh.
+        const response = await fetch('/friends-feed/' + encodeURIComponent(workoutId) + '/comments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to save comment.');
+        }
+
+        return data.comment;
+    }
+
+    async function saveFeedPostComment(feedPostId, text) {
+        // Persist comments on manual feed posts separately from workout comments.
+        const response = await fetch('/friends-feed/posts/' + encodeURIComponent(feedPostId) + '/comments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to save comment.');
+        }
+
+        return data.comment;
+    }
+
+    function createPostCard(ownerId, author, content, isOwner, feedPostId, timestamp) {
+        const postId = feedPostId ? 'saved-post-' + feedPostId : 'post-' + (++postCount);
         const card = document.createElement('div');
 
         card.className = 'card app-card mb-4 post-card';
-        card.dataset.owner = author;
+        card.dataset.ownerId = ownerId;
+
+        if (feedPostId) {
+            card.dataset.feedPostId = feedPostId;
+        }
 
         card.innerHTML = `
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
                         <h3 class="card-title mb-1">${escapeHtml(author)}</h3>
-                        <p class="text-muted small mb-0">${escapeHtml(formatTimestamp(new Date()))}</p>
+                        <p class="text-muted small mb-0">${escapeHtml(timestamp || formatTimestamp(new Date()))}</p>
                     </div>
 
                     <div class="btn-group" role="group" aria-label="Post actions">
@@ -96,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function addPost(event) {
         event.preventDefault();
 
-        const author = postUsernameInput.value.trim() || currentUsername;
+        const author = currentDisplayUsername;
         const content = postContentInput.value.trim();
 
         if (!content) {
@@ -104,13 +179,36 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const isOwner = author === currentUsername;
-        const postCard = createPostCard(author, content, isOwner);
+        const isOwner = currentUserId !== '';
+        addPostBtn.disabled = true;
 
-        feedContainer.appendChild(postCard);
-        postContentInput.value = '';
+        saveFeedPost(content)
+            .then(function (savedPost) {
+                const postCard = createPostCard(
+                    savedPost.owner_id,
+                    savedPost.username || author,
+                    savedPost.content,
+                    isOwner,
+                    savedPost.id,
+                    savedPost.timestamp
+                );
+                const firstPost = feedContainer.querySelector('.post-card');
 
-        updateEmptyState();
+                if (firstPost) {
+                    feedContainer.insertBefore(postCard, firstPost);
+                } else {
+                    feedContainer.appendChild(postCard);
+                }
+
+                postContentInput.value = '';
+                updateEmptyState();
+            })
+            .catch(function (error) {
+                alert(error.message);
+            })
+            .finally(function () {
+                addPostBtn.disabled = false;
+            });
     }
 
     function handleFeedClick(event) {
@@ -121,21 +219,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const owner = card.dataset.owner;
+            const ownerId = card.dataset.ownerId;
 
-            if (owner !== currentUsername) {
+            if (ownerId !== currentUserId) {
                 alert('Only the owner of this post can delete it.');
                 return;
             }
 
-            card.remove();
-            updateEmptyState();
+            const feedPostId = card.dataset.feedPostId;
+
+            if (!feedPostId) {
+                card.remove();
+                updateEmptyState();
+                return;
+            }
+
+            event.target.disabled = true;
+
+            deleteFeedPost(feedPostId)
+                .then(function () {
+                    card.remove();
+                    updateEmptyState();
+                })
+                .catch(function (error) {
+                    alert(error.message);
+                })
+                .finally(function () {
+                    event.target.disabled = false;
+                });
         }
 
         if (event.target.classList.contains('add-comment-btn')) {
             const cardBody = event.target.closest('.card-body');
+            const postCard = event.target.closest('.post-card');
 
-            if (!cardBody) {
+            if (!cardBody || !postCard) {
                 return;
             }
 
@@ -153,15 +271,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const timestamp = formatTimestamp(new Date());
-            const commentItem = createCommentItem(currentUsername, commentText, timestamp);
+            const workoutId = postCard.dataset.workoutId;
+            const feedPostId = postCard.dataset.feedPostId;
 
-            commentsList.appendChild(commentItem);
-            input.value = '';
+            if (!workoutId && !feedPostId) {
+                const timestamp = formatTimestamp(new Date());
+                const commentItem = createCommentItem(currentUserId, currentDisplayUsername, commentText, timestamp);
+
+                commentsList.appendChild(commentItem);
+                input.value = '';
+                return;
+            }
+
+            event.target.disabled = true;
+
+            const saveComment = workoutId ? saveWorkoutComment(workoutId, commentText) : saveFeedPostComment(feedPostId, commentText);
+
+            saveComment
+                .then(function (savedComment) {
+                    const commentItem = createCommentItem(
+                        savedComment.owner_id,
+                        savedComment.username,
+                        savedComment.text,
+                        savedComment.timestamp
+                    );
+
+                    commentsList.appendChild(commentItem);
+                    input.value = '';
+                })
+                .catch(function (error) {
+                    alert(error.message);
+                })
+                .finally(function () {
+                    event.target.disabled = false;
+                });
         }
     }
 
-    if (addPostBtn && postUsernameInput && postContentInput) {
+    if (addPostBtn && postContentInput) {
         addPostBtn.addEventListener('click', addPost);
     }
 

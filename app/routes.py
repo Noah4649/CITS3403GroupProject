@@ -8,7 +8,7 @@ import hashlib
 import hmac
 
 from app import db, mail
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report, Comment, FeedPost, FeedPostComment
 
 
 main = Blueprint('main', __name__)
@@ -303,12 +303,142 @@ def friends_feed():
     public_workouts = Workout.query.filter_by(is_public=True).order_by(
         Workout.date.desc()
     ).all()
+    feed_posts = FeedPost.query.order_by(
+        FeedPost.created_at.desc()
+    ).all()
+    feed_items = (
+        [{'type': 'workout', 'item': workout, 'created_at': workout.date} for workout in public_workouts] +
+        [{'type': 'post', 'item': post, 'created_at': post.created_at} for post in feed_posts]
+    )
+    feed_items.sort(key=lambda feed_item: feed_item['created_at'], reverse=True)
 
     return render_template(
         'friends_feed.html',
+        current_user_id=current_user.id,
         current_username=current_user.username,
-        public_workouts=public_workouts
+        feed_items=feed_items
     )
+
+
+@main.route('/friends-feed/posts', methods=['POST'])
+@login_required
+def add_friend_feed_post():
+    """
+    Saves manual friend feed posts so text updates remain after refresh.
+    """
+    data = request.get_json(silent=True) or {}
+    content = (data.get('content') or request.form.get('content') or '').strip()
+
+    if not content:
+        return jsonify({'success': False, 'message': 'Post text is required.'}), 400
+
+    feed_post = FeedPost(
+        user_id=current_user.id,
+        content=content[:1000]
+    )
+
+    db.session.add(feed_post)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'post': {
+            'id': feed_post.id,
+            'owner_id': feed_post.user_id,
+            'username': current_user.username,
+            'content': feed_post.content,
+            'timestamp': feed_post.created_at.strftime('%d %b %Y %H:%M')
+        }
+    }), 201
+
+
+@main.route('/friends-feed/posts/<int:post_id>', methods=['DELETE'])
+@login_required
+def delete_friend_feed_post(post_id):
+    """
+    Deletes saved manual friend feed posts for the owning user only.
+    """
+    feed_post = FeedPost.query.get_or_404(post_id)
+
+    if feed_post.user_id != current_user.id:
+        abort(403)
+
+    db.session.delete(feed_post)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
+
+@main.route('/friends-feed/posts/<int:post_id>/comments', methods=['POST'])
+@login_required
+def add_friend_feed_post_comment(post_id):
+    """
+    Saves comments on manual friend feed posts by post_id and user_id.
+    """
+    feed_post = FeedPost.query.get_or_404(post_id)
+    data = request.get_json(silent=True) or {}
+    comment_text = (data.get('text') or request.form.get('text') or '').strip()
+
+    if not comment_text:
+        return jsonify({'success': False, 'message': 'Comment text is required.'}), 400
+
+    comment = FeedPostComment(
+        feed_post_id=feed_post.id,
+        user_id=current_user.id,
+        text=comment_text[:500]
+    )
+
+    db.session.add(comment)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'owner_id': comment.user_id,
+            'username': current_user.username,
+            'text': comment.text,
+            'timestamp': comment.created_at.strftime('%d %b %Y %H:%M')
+        }
+    }), 201
+
+
+@main.route('/friends-feed/<int:workout_id>/comments', methods=['POST'])
+@login_required
+def add_friend_feed_comment(workout_id):
+    """
+    Saves friend feed comments by workout_id and user_id so refreshes keep them visible.
+    """
+    workout = Workout.query.get_or_404(workout_id)
+
+    if not workout.is_public:
+        abort(403)
+
+    data = request.get_json(silent=True) or {}
+    comment_text = (data.get('text') or request.form.get('text') or '').strip()
+
+    if not comment_text:
+        return jsonify({'success': False, 'message': 'Comment text is required.'}), 400
+
+    comment = Comment(
+        workout_id=workout.id,
+        user_id=current_user.id,
+        text=comment_text[:500]
+    )
+
+    db.session.add(comment)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'owner_id': comment.user_id,
+            'username': current_user.username,
+            'text': comment.text,
+            'timestamp': comment.created_at.strftime('%d %b %Y %H:%M')
+        }
+    }), 201
 
 
 # ─── PASSWORD RESET ─────────────────────────────────────

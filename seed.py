@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, Workout, Exercise, Meal, Achievement, Friendship, Challenge, ChallengeParticipant, Goal, Feedback
+from app.models import User, Workout, Exercise, Meal, Achievement, Friendship, Challenge, ChallengeParticipant, Goal, Feedback, Comment, FeedPost, FeedPostComment
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 import random
@@ -16,6 +16,9 @@ def seed():
         Feedback.query.delete()
         Achievement.query.delete()
         Goal.query.delete()
+        FeedPostComment.query.delete()
+        FeedPost.query.delete()
+        Comment.query.delete()
         Exercise.query.delete()
         Workout.query.delete()
         Meal.query.delete()

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Friend Feed – FitTrack{% endblock %}
+{% block title %}Friend Feed - FitTrack{% endblock %}
 
 {% block content %}
 
@@ -15,11 +15,6 @@
             <h2 class="section-title">Create a Post</h2>
 
             <div class="mb-3">
-                <label for="post-username" class="form-label">Name</label>
-                <input type="text" id="post-username" name="post_username" class="form-control" placeholder="Enter your name" value="{{ current_username }}">
-            </div>
-
-            <div class="mb-3">
                 <label for="post-content" class="form-label">Post</label>
                 <textarea id="post-content" name="post_content" class="form-control" rows="3" placeholder="Share your workout update"></textarea>
             </div>
@@ -29,62 +24,116 @@
     </div>
 </section>
 
-<section class="feed-section" id="feed-container" data-current-username="{{ current_username|e }}">
-    {% for workout in public_workouts %}
-        <div class="card app-card mb-4 post-card" data-owner="{{ workout.user.username }}">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h3 class="card-title mb-1">{{ workout.user.username }}</h3>
-                        <p class="text-muted small mb-0">{{ workout.date.strftime('%d %b %Y %H:%M') }}</p>
+<section class="feed-section" id="feed-container" data-current-user-id="{{ current_user_id }}" data-current-display-username="{{ current_username|e }}">
+    {% for feed_item in feed_items %}
+        {% if feed_item.type == 'workout' %}
+            {% set workout = feed_item.item %}
+            {# Friend feed ownership uses immutable user IDs; usernames are display text only. #}
+            <div class="card app-card mb-4 post-card" data-owner-id="{{ workout.user_id }}" data-workout-id="{{ workout.id }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="card-title mb-1">{{ workout.user.username }}</h3>
+                            <p class="text-muted small mb-0">{{ workout.date.strftime('%d %b %Y %H:%M') }}</p>
+                        </div>
+
+                        <div class="btn-group" role="group" aria-label="Post actions">
+                            {% if workout.user_id == current_user_id %}
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-post-btn">Delete</button>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-primary comment-toggle-btn" data-bs-toggle="collapse" data-bs-target="#comments-workout-{{ workout.id }}" aria-expanded="false">Comment</button>
+                        </div>
                     </div>
 
-                    <div class="btn-group" role="group" aria-label="Post actions">
-                        {% if workout.user.username == current_username %}
-                            <button type="button" class="btn btn-sm btn-outline-danger delete-post-btn">Delete</button>
-                        {% endif %}
-                        <button type="button" class="btn btn-sm btn-outline-primary comment-toggle-btn" data-bs-toggle="collapse" data-bs-target="#comments-{{ loop.index }}" aria-expanded="false">Comment</button>
-                    </div>
-                </div>
+                    <p class="card-text mb-2"><strong>{{ workout.title }}</strong></p>
 
-                <p class="card-text mb-2"><strong>{{ workout.title }}</strong></p>
+                    {% if workout.duration_mins %}
+                        <p class="card-text text-muted mb-1">Duration: {{ workout.duration_mins }} min</p>
+                    {% endif %}
 
-                {% if workout.duration_mins %}
-                    <p class="card-text text-muted mb-1">Duration: {{ workout.duration_mins }} min</p>
-                {% endif %}
+                    {% if workout.notes %}
+                        <p class="card-text text-muted mb-2">{{ workout.notes }}</p>
+                    {% endif %}
 
-                {% if workout.notes %}
-                    <p class="card-text text-muted mb-2">{{ workout.notes }}</p>
-                {% endif %}
+                    {% if workout.exercises %}
+                        <div class="mb-3">
+                            <strong>Exercises</strong>
+                            <ul class="list-unstyled mb-0">
+                                {% for exercise in workout.exercises %}
+                                    <li class="small mb-1">
+                                        {{ exercise.name }}
+                                        {% if exercise.sets is not none %}&middot; {{ exercise.sets }} sets{% endif %}
+                                        {% if exercise.reps is not none %}&middot; {{ exercise.reps }} reps{% endif %}
+                                        {% if exercise.weight_kg is not none %}&middot; {{ exercise.weight_kg }} kg{% endif %}
+                                        {% if exercise.duration_mins is not none %}&middot; {{ exercise.duration_mins }} min{% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
 
-                {% if workout.exercises %}
-                    <div class="mb-3">
-                        <strong>Exercises</strong>
-                        <ul class="list-unstyled mb-0">
-                            {% for exercise in workout.exercises %}
-                                <li class="small mb-1">
-                                    {{ exercise.name }}
-                                    {% if exercise.sets is not none %}· {{ exercise.sets }} sets{% endif %}
-                                    {% if exercise.reps is not none %}· {{ exercise.reps }} reps{% endif %}
-                                    {% if exercise.weight_kg is not none %}· {{ exercise.weight_kg }} kg{% endif %}
-                                    {% if exercise.duration_mins is not none %}· {{ exercise.duration_mins }} min{% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-
-                <div class="collapse" id="comments-{{ loop.index }}">
-                    <div class="card card-body bg-light">
-                        <div class="comments-list mb-3"></div>
-                        <div class="input-group">
-                            <input type="text" class="form-control comment-input" placeholder="Write a comment..." aria-label="Comment text">
-                            <button type="button" class="btn btn-primary add-comment-btn">Add</button>
+                    <div class="collapse" id="comments-workout-{{ workout.id }}">
+                        <div class="card card-body bg-light">
+                            <div class="comments-list mb-3">
+                                {% for comment in workout.comments|sort(attribute='created_at') %}
+                                    {# Comment ownership uses user IDs; usernames are only shown as labels. #}
+                                    <div class="mb-3 border-bottom pb-2" data-owner-id="{{ comment.user_id }}">
+                                        <strong>{{ comment.user.username }}</strong>
+                                        <span class="text-muted small">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</span>
+                                        <p class="mb-0">{{ comment.text }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control comment-input" placeholder="Write a comment..." aria-label="Comment text">
+                                <button type="button" class="btn btn-primary add-comment-btn">Add</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% else %}
+            {% set post = feed_item.item %}
+            {# Manual posts are saved as FeedPost rows and linked to the posting user ID. #}
+            <div class="card app-card mb-4 post-card" data-owner-id="{{ post.user_id }}" data-feed-post-id="{{ post.id }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="card-title mb-1">{{ post.user.username }}</h3>
+                            <p class="text-muted small mb-0">{{ post.created_at.strftime('%d %b %Y %H:%M') }}</p>
+                        </div>
+
+                        <div class="btn-group" role="group" aria-label="Post actions">
+                            {% if post.user_id == current_user_id %}
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-post-btn">Delete</button>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-primary comment-toggle-btn" data-bs-toggle="collapse" data-bs-target="#comments-post-{{ post.id }}" aria-expanded="false">Comment</button>
+                        </div>
+                    </div>
+
+                    <p class="card-text mb-3">{{ post.content }}</p>
+
+                    <div class="collapse" id="comments-post-{{ post.id }}">
+                        <div class="card card-body bg-light">
+                            <div class="comments-list mb-3">
+                                {% for comment in post.comments|sort(attribute='created_at') %}
+                                    {# Comment ownership uses user IDs; usernames are only shown as labels. #}
+                                    <div class="mb-3 border-bottom pb-2" data-owner-id="{{ comment.user_id }}">
+                                        <strong>{{ comment.user.username }}</strong>
+                                        <span class="text-muted small">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</span>
+                                        <p class="mb-0">{{ comment.text }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control comment-input" placeholder="Write a comment..." aria-label="Comment text">
+                                <button type="button" class="btn btn-primary add-comment-btn">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     {% endfor %}
 
     <div class="card app-card mb-4" id="empty-feed-message">
