@@ -335,6 +335,49 @@ class TestProtectedRoutes:
 
         assert response.status_code == 302
 
+    def test_owner_can_delete_friend_feed_workout(self, app, logged_in_client):
+        """DELETE friend feed workout should remove the owner's workout from the public feed."""
+        with app.app_context():
+            user = User.query.filter_by(email='test@test.com').first()
+            workout = Workout(
+                user_id=user.id,
+                title='Delete me from feed',
+                is_public=True
+            )
+            db.session.add(workout)
+            db.session.commit()
+            workout_id = workout.id
+
+        response = logged_in_client.delete(f'/friends-feed/workouts/{workout_id}')
+
+        assert response.status_code == 200
+        assert response.get_json()['success'] is True
+
+        with app.app_context():
+            saved_workout = Workout.query.get(workout_id)
+            assert saved_workout is not None
+            assert saved_workout.is_public is False
+
+    def test_non_owner_cannot_delete_friend_feed_workout(self, app, logged_in_client):
+        """DELETE friend feed workout should reject users who do not own the workout."""
+        with app.app_context():
+            admin = User.query.filter_by(email='admin@test.com').first()
+            workout = Workout(
+                user_id=admin.id,
+                title='Not your workout',
+                is_public=True
+            )
+            db.session.add(workout)
+            db.session.commit()
+            workout_id = workout.id
+
+        response = logged_in_client.delete(f'/friends-feed/workouts/{workout_id}')
+
+        assert response.status_code == 403
+
+        with app.app_context():
+            assert Workout.query.get(workout_id) is not None
+
     def test_settings_logged_out_redirects(self, client):
         """GET /settings without login should redirect to login."""
         response = client.get('/settings', follow_redirects=True)

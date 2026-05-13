@@ -88,6 +88,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function deleteWorkoutPost(workoutId) {
+        // Persist workout feed deletes so the post disappears for everyone.
+        const response = await fetch('/friends-feed/workouts/' + encodeURIComponent(workoutId), {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to delete workout post.');
+        }
+    }
+
     async function saveWorkoutComment(workoutId, text) {
         // Persist comments for saved workout posts so other users see them after refresh.
         const response = await fetch('/friends-feed/' + encodeURIComponent(workoutId) + '/comments', {
@@ -227,8 +240,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const feedPostId = card.dataset.feedPostId;
+            const workoutId = card.dataset.workoutId;
 
-            if (!feedPostId) {
+            if (!feedPostId && !workoutId) {
                 card.remove();
                 updateEmptyState();
                 return;
@@ -236,7 +250,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             event.target.disabled = true;
 
-            deleteFeedPost(feedPostId)
+            const deletePost = feedPostId ? deleteFeedPost(feedPostId) : deleteWorkoutPost(workoutId);
+
+            deletePost
                 .then(function () {
                     card.remove();
                     updateEmptyState();

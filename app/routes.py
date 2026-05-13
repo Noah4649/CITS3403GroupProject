@@ -369,6 +369,23 @@ def delete_friend_feed_post(post_id):
     return jsonify({'success': True})
 
 
+@main.route('/friends-feed/workouts/<int:workout_id>', methods=['DELETE'])
+@login_required
+def delete_friend_feed_workout(workout_id):
+    """
+    Removes workout posts from the public feed for the owning user only.
+    """
+    workout = Workout.query.get_or_404(workout_id)
+
+    if workout.user_id != current_user.id:
+        abort(403)
+
+    workout.is_public = False
+    db.session.commit()
+
+    return jsonify({'success': True})
+
+
 @main.route('/friends-feed/posts/<int:post_id>/comments', methods=['POST'])
 @login_required
 def add_friend_feed_post_comment(post_id):
