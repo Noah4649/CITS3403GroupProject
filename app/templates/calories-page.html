@@ -9,7 +9,7 @@
         <div class="container-fluid">
             <h1 class="section-title section-title-hd">Calories</h1>
             <p class="section-title">
-                Keep track of your calories, meals and daily goals. <strong>{{ current_user.username }}</strong>
+                Keep track of your calories, meals and daily goals.
             </p>
         </div>
     </section>
@@ -168,7 +168,7 @@
                                     <th>Carbs</th>
                                     <th>Fats</th>
                                     <th>Water</th>
-                                    <th>Action</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody id="meals-table-body">
@@ -227,14 +227,14 @@
         <section class="mb-4">
             <div class="card app-card h-100 text-center">
                 <div class="card-body">
-                    <h2 class="section-title section-title-lg text-center">
-                        Calories Burnt: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
+                    <h2 id="weekly-calories-title" class="section-title section-title-lg text-center">
+                        Weekly Calories: {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}
                     </h2>
 
                     <form method="GET" action="{{ url_for('main.calories') }}" class="mb-3">
                         <label for="week" class="form-label">Select week</label>
 
-                        <select name="week" id="week" class="form-select" onchange="this.form.submit()">
+                        <select name="week" id="week" class="form-select">
                             <option value="this" {% if selected_week == 'this' %}selected{% endif %}>This week</option>
                             <option value="last" {% if selected_week == 'last' %}selected{% endif %}>Last week</option>
                             <option value="two_weeks_ago" {% if selected_week == 'two_weeks_ago' %}selected{% endif %}>Two weeks ago</option>
@@ -252,13 +252,16 @@
 {% endblock %}
 
 {% block extra_scripts %}
-    <!-- Calories Burnt Graph -->
+    <!-- Weekly Calories Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         window.caloriesChartData = {
             labels: {{ week_labels | tojson }},
-            burnedData: {{ week_burned_data | tojson }}
+            burnedData: {{ week_burned_data | tojson }},
+            consumedData: {{ week_consumed_data | tojson }},
+            todayIndex: {{ today_index | tojson }},
+            currentDayIndex: {{ current_day_index | tojson }}
         };
     </script>
 

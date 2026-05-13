@@ -540,8 +540,10 @@ textarea.form-control {
 }
 
 :root {
-    --chart-calories-line: #3b8eea;
-    --chart-calories-fill: rgba(59, 142, 234, 0.15);
+    --chart-calories-line: #f5a623;
+    --chart-calories-fill: rgba(245, 166, 35, 0.15);
+    --chart-consumed-line: #3b8eea;
+    --chart-consumed-fill: rgba(59, 142, 234, 0.15);
     --chart-grid-line: rgba(255, 255, 255, 0.08);
 }
 

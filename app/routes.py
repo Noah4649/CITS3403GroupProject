@@ -534,23 +534,42 @@ def calories():
     else:
         selected_week = 'this'
         week_start = start_of_this_week
+    
+    current_day_index = today.weekday() if selected_week == 'this' else None
 
     week_end = week_start + timedelta(days=6)
 
     week_labels = []
     week_burned_data = []
+    week_consumed_data = []
+
+    today_index = today.weekday() if selected_week == 'this' else None
 
     for i in range(7):
         day = week_start + timedelta(days=i)
+
+        week_labels.append(day.strftime('%a'))
+
+        # If viewing this week, do not draw future days
+        if selected_week == 'this' and day > today:
+            week_burned_data.append(None)
+            week_consumed_data.append(None)
+            continue
 
         daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
             db.func.date(Workout.date) == day
         ).all()
 
-        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == day
+        ).all()
 
-        week_labels.append(day.strftime('%a'))
+        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_total_consumed = sum(meal.calories or 0 for meal in daily_meals)
+
         week_burned_data.append(daily_total_burned)
+        week_consumed_data.append(daily_total_consumed)
+
 
     return render_template(
         'calories-page.html',
@@ -565,9 +584,74 @@ def calories():
         week_start=week_start,
         week_end=week_end,
         week_labels=week_labels,
-        week_burned_data=week_burned_data
+        week_burned_data=week_burned_data,
+        week_consumed_data=week_consumed_data,
+        today_index=today_index,
+        current_day_index=current_day_index
     )
 
+# ─── CALORIES CHART DATA API ────────────────────────────
+@main.route('/api/calories-chart-data')
+@login_required
+def calories_chart_data():
+    today = date.today()
+
+    selected_week = request.args.get('week', 'this')
+    start_of_this_week = today - timedelta(days=today.weekday())
+
+    if selected_week == 'last':
+        week_start = start_of_this_week - timedelta(days=7)
+    elif selected_week == 'two_weeks_ago':
+        week_start = start_of_this_week - timedelta(days=14)
+    else:
+        selected_week = 'this'
+        week_start = start_of_this_week
+
+    week_end = week_start + timedelta(days=6)
+
+    week_labels = []
+    week_burned_data = []
+    week_consumed_data = []
+
+    today_index = today.weekday() if selected_week == 'this' else None
+    current_day_index = today.weekday() if selected_week == 'this' else None
+
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+
+        week_labels.append(day.strftime('%a'))
+
+        # If viewing this week, do not draw future days
+        if selected_week == 'this' and day > today:
+            week_burned_data.append(None)
+            week_consumed_data.append(None)
+            continue
+
+        daily_workouts = Workout.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Workout.date) == day
+        ).all()
+
+        daily_meals = Meal.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Meal.date) == day
+        ).all()
+
+        daily_total_burned = sum(workout.calories_burned or 0 for workout in daily_workouts)
+        daily_total_consumed = sum(meal.calories or 0 for meal in daily_meals)
+
+        week_burned_data.append(daily_total_burned)
+        week_consumed_data.append(daily_total_consumed)
+
+    return jsonify({
+        'success': True,
+        'selectedWeek': selected_week,
+        'weekStart': week_start.strftime('%d %b'),
+        'weekEnd': week_end.strftime('%d %b'),
+        'labels': week_labels,
+        'burnedData': week_burned_data,
+        'consumedData': week_consumed_data,
+        'todayIndex': today_index,
+        'currentDayIndex': current_day_index
+    })
 
 # ─── ADD MEAL API ───────────────────────────────────────
 @main.route('/api/add-meal', methods=['POST'])
