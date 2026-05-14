@@ -23,11 +23,12 @@
                     <h3 class="section-title section-title-lg text-center">Find Friends</h3>
                     <p class="section-title text-center">Search for other users and send friend requests.</p>
 
-                    <form method="GET" action="{{ url_for('main.friends') }}" class="row g-2 justify-content-center">
+                    <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2 justify-content-center">
                         <div class="col-md-8">
                             <input 
                                 type="text"
                                 name="q"
+                                id="friend-search-input"
                                 class="form-control"
                                 placeholder="Search by username or email"
                                 value="{{ search_query or '' }}"
@@ -41,17 +42,17 @@
                         </div>
                     </form>
 
-                    {% if search_results %}
-                        <div class="table-responsive leaderboard-table-scroll mt-3">
-                            <table class="table text-center custom-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                    <div class="table-responsive leaderboard-table-scroll mt-3">
+                        <table class="table text-center custom-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="friend-search-results-body">
+                                {% if search_results %}
                                     {% for user in search_results %}
                                         <tr>
                                             <td>{{ user.username }}</td>
@@ -65,12 +66,23 @@
                                             </td>
                                         </tr>
                                     {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% elif search_query %}
-                        <p class="text-center mt-3 mb-0">No users found.</p>
-                    {% endif %}
+                                {% elif search_query %}
+                                    <tr class="empty-row">
+                                        <td>-</td>
+                                        <td>No users found.</td>
+                                        <td>-</td>
+                                    </tr>
+                                {% else %}
+                                    <tr class="empty-row">
+                                        <td>-</td>
+                                        <td>Search for users to send a friend request.</td>
+                                        <td>-</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
             </div>
         </section>

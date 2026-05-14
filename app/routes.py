@@ -352,6 +352,67 @@ def friends():
         friends=friends
     )
 
+# ─── FRIEND SEARCH API ──────────────────────────────────
+@main.route('/api/friends/search')
+@login_required
+def api_friend_search():
+    search_query = (request.args.get('q') or '').strip()
+
+    if not search_query:
+        return jsonify({
+            'success': True,
+            'users': []
+        })
+
+    users = User.query.filter(
+        User.id != current_user.id,
+        db.or_(
+            User.username.ilike(f'%{search_query}%'),
+            User.email.ilike(f'%{search_query}%')
+        )
+    ).order_by(
+        User.username.asc()
+    ).limit(10).all()
+
+    results = []
+
+    for user in users:
+        existing_friendship = Friendship.query.filter(
+            db.or_(
+                db.and_(
+                    Friendship.requester_id == current_user.id,
+                    Friendship.receiver_id == user.id
+                ),
+                db.and_(
+                    Friendship.requester_id == user.id,
+                    Friendship.receiver_id == current_user.id
+                )
+            )
+        ).first()
+
+        relationship_status = 'available'
+
+        if existing_friendship:
+            if existing_friendship.status == 'accepted':
+                relationship_status = 'friends'
+            elif existing_friendship.status == 'pending':
+                if existing_friendship.requester_id == current_user.id:
+                    relationship_status = 'pending_sent'
+                else:
+                    relationship_status = 'pending_received'
+
+        results.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'relationship_status': relationship_status
+        })
+
+    return jsonify({
+        'success': True,
+        'users': results
+    })
+
 def wants_json_response():
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 

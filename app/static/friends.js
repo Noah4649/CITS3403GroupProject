@@ -1,8 +1,66 @@
 // ─── AJAX FRIEND REQUEST MANAGEMENT ────────────────────
 document.addEventListener('DOMContentLoaded', function () {
+    const friendSearchForm = document.getElementById('friend-search-form');
+    const friendSearchInput = document.getElementById('friend-search-input');
+    const friendSearchResultsBody = document.getElementById('friend-search-results-body');
     const sentRequestsBody = document.getElementById('sent-requests-body');
     const incomingRequestsBody = document.getElementById('incoming-requests-body');
     const friendsTableBody = document.getElementById('friends-table-body');
+
+    function renderFriendSearchResults(users) {
+        if (!friendSearchResultsBody) return;
+
+        if (!users.length) {
+            friendSearchResultsBody.innerHTML = `
+                <tr class="empty-row">
+                    <td>-</td>
+                    <td>No users found.</td>
+                    <td>-</td>
+                </tr>
+            `;
+            return;
+        }
+
+        friendSearchResultsBody.innerHTML = users.map(user => {
+            let actionHtml = '';
+
+            if (user.relationship_status === 'friends') {
+                actionHtml = `
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                        Friends
+                    </button>
+                `;
+            } else if (user.relationship_status === 'pending_sent') {
+                actionHtml = `
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                        Pending
+                    </button>
+                `;
+            } else if (user.relationship_status === 'pending_received') {
+                actionHtml = `
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                        Request Received
+                    </button>
+                `;
+            } else {
+                actionHtml = `
+                    <form class="send-friend-request-form" method="POST" action="/friends/request/${user.id}">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            Add Friend
+                        </button>
+                    </form>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${actionHtml}</td>
+                </tr>
+            `;
+        }).join('');
+    }
 
     function removeEmptyRow(tbody) {
         if (!tbody) return;
@@ -73,6 +131,44 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
 
         friendsTableBody.prepend(row);
+    }
+
+    if (friendSearchForm && friendSearchInput && friendSearchResultsBody) {
+        friendSearchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const query = friendSearchInput.value.trim();
+
+            if (!query) {
+                friendSearchResultsBody.innerHTML = `
+                    <tr class="empty-row">
+                        <td>-</td>
+                        <td>Enter a username or email to search.</td>
+                        <td>-</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Could not search for users.');
+                    return;
+                }
+
+                renderFriendSearchResults(data.users);
+            })
+            .catch(error => {
+                console.error('Friend search error:', error);
+                alert('Something went wrong while searching for users.');
+            });
+        });
     }
 
     document.addEventListener('submit', function (event) {
