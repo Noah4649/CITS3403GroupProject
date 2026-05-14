@@ -24,10 +24,45 @@ class User(UserMixin, db.Model):
 # ─── FRIENDSHIPS ────────────────────────────────────────
 class Friendship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending/accepted/blocked
+
+    requester_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+
+    receiver_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+
+    status = db.Column(db.String(20), default='pending', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    requester = db.relationship(
+        'User',
+        foreign_keys=[requester_id],
+        backref='sent_friend_requests'
+    )
+
+    receiver = db.relationship(
+        'User',
+        foreign_keys=[receiver_id],
+        backref='received_friend_requests'
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'requester_id',
+            'receiver_id',
+            name='unique_friend_request'
+        ),
+        db.CheckConstraint(
+            'requester_id != receiver_id',
+            name='check_no_self_friendship'
+        ),
+    )
 
 # ─── WORKOUTS ───────────────────────────────────────────
 class Workout(db.Model):
