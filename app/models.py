@@ -40,6 +40,18 @@ class Friendship(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    requester = db.relationship(
+        'User',
+        foreign_keys=[requester_id],
+        backref='sent_friend_requests'
+    )
+
+    receiver = db.relationship(
+        'User',
+        foreign_keys=[receiver_id],
+        backref='received_friend_requests'
+    )
+
     __table_args__ = (
         db.UniqueConstraint(
             'requester_id',
