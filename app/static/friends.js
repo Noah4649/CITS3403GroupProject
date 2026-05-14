@@ -1,6 +1,8 @@
-// ─── AJAX FRIEND REQUEST SENDING ───────────────────────
+// ─── AJAX FRIEND REQUEST MANAGEMENT ────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     const sentRequestsBody = document.getElementById('sent-requests-body');
+    const incomingRequestsBody = document.getElementById('incoming-requests-body');
+    const friendsTableBody = document.getElementById('friends-table-body');
 
     function removeEmptyRow(tbody) {
         if (!tbody) return;
@@ -9,6 +11,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (emptyRow) {
             emptyRow.remove();
+        }
+    }
+
+    function addEmptyRowIfNeeded(tbody, colspan, message) {
+        if (!tbody) return;
+
+        const realRows = tbody.querySelectorAll('tr:not(.empty-row)');
+
+        if (realRows.length === 0) {
+            tbody.innerHTML = `
+                <tr class="empty-row">
+                    <td colspan="${colspan}">${message}</td>
+                </tr>
+            `;
         }
     }
 
@@ -32,39 +48,128 @@ document.addEventListener('DOMContentLoaded', function () {
         sentRequestsBody.prepend(row);
     }
 
-    document.addEventListener('submit', function (event) {
-        const form = event.target;
+    function addFriendRow(friend) {
+        if (!friendsTableBody) return;
 
-        if (!form.classList.contains('send-friend-request-form')) {
+        removeEmptyRow(friendsTableBody);
+
+        if (document.getElementById(`friend-row-${friend.id}`)) {
             return;
         }
 
-        event.preventDefault();
+        const row = document.createElement('tr');
+        row.id = `friend-row-${friend.id}`;
 
-        fetch(form.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                alert(data.message || 'Could not send friend request.');
-                return;
-            }
+        row.innerHTML = `
+            <td>${friend.username}</td>
+            <td>${friend.email}</td>
+            <td>
+                <form class="remove-friend-form" method="POST" action="/friends/remove/${friend.id}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        Remove
+                    </button>
+                </form>
+            </td>
+        `;
 
-            form.outerHTML = `
-                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
-                    Pending
-                </button>
-            `;
+        friendsTableBody.prepend(row);
+    }
 
-            addSentRequestRow(data.request);
-        })
-        .catch(error => {
-            console.error('Send friend request error:', error);
-            alert('Something went wrong while sending the friend request.');
-        });
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+
+        // Send friend request without refreshing
+        if (form.classList.contains('send-friend-request-form')) {
+            event.preventDefault();
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Could not send friend request.');
+                    return;
+                }
+
+                form.outerHTML = `
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                        Pending
+                    </button>
+                `;
+
+                addSentRequestRow(data.request);
+            })
+            .catch(error => {
+                console.error('Send friend request error:', error);
+                alert('Something went wrong while sending the friend request.');
+            });
+        }
+
+        // Accept friend request without refreshing
+        if (form.classList.contains('accept-friend-request-form')) {
+            event.preventDefault();
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Could not accept friend request.');
+                    return;
+                }
+
+                const row = document.getElementById(`incoming-request-row-${data.friendship_id}`);
+
+                if (row) {
+                    row.remove();
+                }
+
+                addFriendRow(data.friend);
+                addEmptyRowIfNeeded(incomingRequestsBody, 2, 'No incoming friend requests.');
+            })
+            .catch(error => {
+                console.error('Accept friend request error:', error);
+                alert('Something went wrong while accepting the friend request.');
+            });
+        }
+
+        // Decline friend request without refreshing
+        if (form.classList.contains('decline-friend-request-form')) {
+            event.preventDefault();
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Could not decline friend request.');
+                    return;
+                }
+
+                const row = document.getElementById(`incoming-request-row-${data.friendship_id}`);
+
+                if (row) {
+                    row.remove();
+                }
+
+                addEmptyRowIfNeeded(incomingRequestsBody, 2, 'No incoming friend requests.');
+            })
+            .catch(error => {
+                console.error('Decline friend request error:', error);
+                alert('Something went wrong while declining the friend request.');
+            });
+        }
     });
 });

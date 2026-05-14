@@ -423,6 +423,9 @@ def send_friend_request(user_id):
     flash(message, 'success')
     return redirect(url_for('main.friends', q=receiver.username))
 
+def wants_json_response():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
 # ─── ACCEPT FRIEND REQUEST ──────────────────────────────
 @main.route('/friends/accept/<int:friendship_id>', methods=['POST'])
 @login_required
@@ -430,17 +433,42 @@ def accept_friend_request(friendship_id):
     friendship = Friendship.query.get_or_404(friendship_id)
 
     if friendship.receiver_id != current_user.id:
-        flash('You do not have permission to accept this friend request.', 'danger')
+        message = 'You do not have permission to accept this friend request.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 403
+
+        flash(message, 'danger')
         return redirect(url_for('main.friends'))
 
     if friendship.status != 'pending':
-        flash('This friend request is no longer pending.', 'info')
+        message = 'This friend request is no longer pending.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'info')
         return redirect(url_for('main.friends'))
 
     friendship.status = 'accepted'
     db.session.commit()
 
-    flash(f'You are now friends with {friendship.requester.username}.', 'success')
+    requester = friendship.requester
+    message = f'You are now friends with {requester.username}.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friendship_id': friendship.id,
+            'friend': {
+                'id': requester.id,
+                'username': requester.username,
+                'email': requester.email
+            }
+        })
+
+    flash(message, 'success')
     return redirect(url_for('main.friends'))
 
 # ─── DECLINE FRIEND REQUEST ─────────────────────────────
@@ -450,19 +478,39 @@ def decline_friend_request(friendship_id):
     friendship = Friendship.query.get_or_404(friendship_id)
 
     if friendship.receiver_id != current_user.id:
-        flash('You do not have permission to decline this friend request.', 'danger')
+        message = 'You do not have permission to decline this friend request.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 403
+
+        flash(message, 'danger')
         return redirect(url_for('main.friends'))
 
     if friendship.status != 'pending':
-        flash('This friend request is no longer pending.', 'info')
+        message = 'This friend request is no longer pending.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'info')
         return redirect(url_for('main.friends'))
 
     requester_username = friendship.requester.username
+    friendship_id = friendship.id
 
     db.session.delete(friendship)
     db.session.commit()
 
-    flash(f'Friend request from {requester_username} declined.', 'info')
+    message = f'Friend request from {requester_username} declined.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friendship_id': friendship_id
+        })
+
+    flash(message, 'info')
     return redirect(url_for('main.friends'))
 
 # ─── REMOVE FRIEND ──────────────────────────────────────

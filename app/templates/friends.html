@@ -93,20 +93,20 @@
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="incoming-requests-body">
                                         {% if incoming_requests %}
                                             {% for request in incoming_requests %}
-                                                <tr>
+                                                <tr id="incoming-request-row-{{ request.id }}">
                                                     <td>{{ request.requester.username }}</td>
                                                     <td>
                                                         <div class="d-flex justify-content-center gap-2">
-                                                            <form method="POST" action="{{ url_for('main.accept_friend_request', friendship_id=request.id) }}">
+                                                            <form class="accept-friend-request-form" method="POST" action="{{ url_for('main.accept_friend_request', friendship_id=request.id) }}">
                                                                 <button type="submit" class="btn btn-outline-success btn-sm">
                                                                     Accept
                                                                 </button>
                                                             </form>
 
-                                                            <form method="POST" action="{{ url_for('main.decline_friend_request', friendship_id=request.id) }}">
+                                                            <form class="decline-friend-request-form" method="POST" action="{{ url_for('main.decline_friend_request', friendship_id=request.id) }}">
                                                                 <button type="submit" class="btn btn-outline-secondary btn-sm">
                                                                     Decline
                                                                 </button>
@@ -116,7 +116,7 @@
                                                 </tr>
                                             {% endfor %}
                                         {% else %}
-                                            <tr>
+                                            <tr class="empty-row">
                                                 <td colspan="2">No incoming friend requests.</td>
                                             </tr>
                                         {% endif %}
@@ -182,14 +182,14 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="friends-table-body">
                                 {% if friends %}
                                     {% for friend in friends %}
-                                        <tr>
+                                        <tr id="friend-row-{{ friend.id }}">
                                             <td>{{ friend.username }}</td>
                                             <td>{{ friend.email }}</td>
                                             <td>
-                                                <form method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
+                                                <form class="remove-friend-form" method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
                                                     <button type="submit" class="btn btn-outline-secondary btn-sm">
                                                         Remove
                                                     </button>
@@ -198,7 +198,7 @@
                                         </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
+                                    <tr class="empty-row">
                                         <td colspan="3">You have not added any friends yet.</td>
                                     </tr>
                                 {% endif %}
