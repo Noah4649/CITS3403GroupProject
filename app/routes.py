@@ -8,7 +8,7 @@ import hashlib
 import hmac
 
 from app import db, mail
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report, Friendship
 
 
 main = Blueprint('main', __name__)
@@ -295,6 +295,18 @@ def workout_finish(workout_id):
     flash(f'Nice work! "{workout.title}" saved to your history.')
     return redirect(url_for('main.history'))
 
+# ─── FRIENDS ────────────────────────────────────────────
+@main.route('/friends')
+@login_required
+def friends():
+    return render_template(
+        'friends.html',
+        search_query='',
+        search_results=[],
+        incoming_requests=[],
+        sent_requests=[],
+        friends=[]
+    )
 
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
