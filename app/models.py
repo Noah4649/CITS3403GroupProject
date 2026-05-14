@@ -24,10 +24,33 @@ class User(UserMixin, db.Model):
 # ─── FRIENDSHIPS ────────────────────────────────────────
 class Friendship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending/accepted/blocked
+
+    requester_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+
+    receiver_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+
+    status = db.Column(db.String(20), default='pending', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'requester_id',
+            'receiver_id',
+            name='unique_friend_request'
+        ),
+        db.CheckConstraint(
+            'requester_id != receiver_id',
+            name='check_no_self_friendship'
+        ),
+    )
 
 # ─── WORKOUTS ───────────────────────────────────────────
 class Workout(db.Model):
@@ -81,6 +104,10 @@ class Achievement(db.Model):
     description = db.Column(db.String(300))
     badge_icon = db.Column(db.String(100))
     earned_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'title', name='unique_user_achievement'),
+    )
 
 # ─── CHALLENGES ─────────────────────────────────────────
 class Challenge(db.Model):
