@@ -65,6 +65,27 @@ class Friendship(db.Model):
     )
 
 # ─── WORKOUTS ───────────────────────────────────────────
+# Friend feed text posts are separate from workouts so refreshes keep manual updates.
+class FeedPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.String(1000), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='feed_posts')
+    comments = db.relationship('FeedPostComment', backref='feed_post', lazy=True, cascade='all, delete-orphan')
+
+
+class FeedPostComment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    feed_post_id = db.Column(db.Integer, db.ForeignKey('feed_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    text = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='feed_post_comments')
+
+
 class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -76,6 +97,7 @@ class Workout(db.Model):
     is_public = db.Column(db.Boolean, default=False)
 
     exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='workout', lazy=True, cascade='all, delete-orphan')
 
 class Exercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -85,6 +107,16 @@ class Exercise(db.Model):
     reps = db.Column(db.Integer)
     weight_kg = db.Column(db.Float)
     duration_mins = db.Column(db.Integer)
+
+# Friend feed comments are linked by user_id so username changes do not break ownership/display.
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    workout_id = db.Column(db.Integer, db.ForeignKey('workout.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    text = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='comments')
 
 # ─── NUTRITION ──────────────────────────────────────────
 class Meal(db.Model):
