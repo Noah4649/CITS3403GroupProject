@@ -8,7 +8,7 @@ import hashlib
 import hmac
 
 from app import db, mail
-from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report
+from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report, Friendship
 
 
 main = Blueprint('main', __name__)
@@ -295,6 +295,334 @@ def workout_finish(workout_id):
     flash(f'Nice work! "{workout.title}" saved to your history.')
     return redirect(url_for('main.history'))
 
+# ─── FRIENDS ────────────────────────────────────────────
+@main.route('/friends')
+@login_required
+def friends():
+    search_query = (request.args.get('q') or '').strip()
+    search_results = []
+
+    if search_query:
+        search_results = User.query.filter(
+            User.id != current_user.id,
+            db.or_(
+                User.username.ilike(f'%{search_query}%'),
+                User.email.ilike(f'%{search_query}%')
+            )
+        ).order_by(
+            User.username.asc()
+        ).limit(10).all()
+
+    incoming_requests = Friendship.query.filter_by(
+        receiver_id=current_user.id,
+        status='pending'
+    ).order_by(
+        Friendship.created_at.desc()
+    ).all()
+
+    sent_requests = Friendship.query.filter_by(
+        requester_id=current_user.id,
+        status='pending'
+    ).order_by(
+        Friendship.created_at.desc()
+    ).all()
+
+    accepted_friendships = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            Friendship.requester_id == current_user.id,
+            Friendship.receiver_id == current_user.id
+        )
+    ).all()
+
+    friends = []
+
+    for friendship in accepted_friendships:
+        if friendship.requester_id == current_user.id:
+            friends.append(friendship.receiver)
+        else:
+            friends.append(friendship.requester)
+
+    return render_template(
+        'friends.html',
+        search_query=search_query,
+        search_results=search_results,
+        incoming_requests=incoming_requests,
+        sent_requests=sent_requests,
+        friends=friends
+    )
+
+# ─── FRIEND SEARCH API ──────────────────────────────────
+@main.route('/api/friends/search')
+@login_required
+def api_friend_search():
+    search_query = (request.args.get('q') or '').strip()
+
+    if not search_query:
+        return jsonify({
+            'success': True,
+            'users': []
+        })
+
+    users = User.query.filter(
+        User.id != current_user.id,
+        db.or_(
+            User.username.ilike(f'%{search_query}%'),
+            User.email.ilike(f'%{search_query}%')
+        )
+    ).order_by(
+        User.username.asc()
+    ).limit(10).all()
+
+    results = []
+
+    for user in users:
+        existing_friendship = Friendship.query.filter(
+            db.or_(
+                db.and_(
+                    Friendship.requester_id == current_user.id,
+                    Friendship.receiver_id == user.id
+                ),
+                db.and_(
+                    Friendship.requester_id == user.id,
+                    Friendship.receiver_id == current_user.id
+                )
+            )
+        ).first()
+
+        relationship_status = 'available'
+
+        if existing_friendship:
+            if existing_friendship.status == 'accepted':
+                relationship_status = 'friends'
+            elif existing_friendship.status == 'pending':
+                if existing_friendship.requester_id == current_user.id:
+                    relationship_status = 'pending_sent'
+                else:
+                    relationship_status = 'pending_received'
+
+        results.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'relationship_status': relationship_status
+        })
+
+    return jsonify({
+        'success': True,
+        'users': results
+    })
+
+def wants_json_response():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+# ─── SEND FRIEND REQUEST ────────────────────────────────
+@main.route('/friends/request/<int:user_id>', methods=['POST'])
+@login_required
+def send_friend_request(user_id):
+    receiver = User.query.get_or_404(user_id)
+
+    if receiver.id == current_user.id:
+        message = 'You cannot send a friend request to yourself.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'danger')
+        return redirect(url_for('main.friends'))
+
+    existing_friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(
+                Friendship.requester_id == current_user.id,
+                Friendship.receiver_id == receiver.id
+            ),
+            db.and_(
+                Friendship.requester_id == receiver.id,
+                Friendship.receiver_id == current_user.id
+            )
+        )
+    ).first()
+
+    if existing_friendship:
+        if existing_friendship.status == 'accepted':
+            message = f'You are already friends with {receiver.username}.'
+        elif existing_friendship.status == 'pending':
+            message = 'A friend request is already pending.'
+        else:
+            message = 'A friendship record already exists with this user.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 409
+
+        flash(message, 'info')
+        return redirect(url_for('main.friends', q=receiver.username))
+
+    new_request = Friendship(
+        requester_id=current_user.id,
+        receiver_id=receiver.id,
+        status='pending'
+    )
+
+    db.session.add(new_request)
+    db.session.commit()
+
+    message = f'Friend request sent to {receiver.username}.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'request': {
+                'id': new_request.id,
+                'receiver_id': receiver.id,
+                'receiver_username': receiver.username,
+                'status': new_request.status
+            }
+        })
+
+    flash(message, 'success')
+    return redirect(url_for('main.friends', q=receiver.username))
+
+def wants_json_response():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+# ─── ACCEPT FRIEND REQUEST ──────────────────────────────
+@main.route('/friends/accept/<int:friendship_id>', methods=['POST'])
+@login_required
+def accept_friend_request(friendship_id):
+    friendship = Friendship.query.get_or_404(friendship_id)
+
+    if friendship.receiver_id != current_user.id:
+        message = 'You do not have permission to accept this friend request.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 403
+
+        flash(message, 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.status != 'pending':
+        message = 'This friend request is no longer pending.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'info')
+        return redirect(url_for('main.friends'))
+
+    friendship.status = 'accepted'
+    db.session.commit()
+
+    requester = friendship.requester
+    message = f'You are now friends with {requester.username}.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friendship_id': friendship.id,
+            'friend': {
+                'id': requester.id,
+                'username': requester.username,
+                'email': requester.email
+            }
+        })
+
+    flash(message, 'success')
+    return redirect(url_for('main.friends'))
+
+# ─── DECLINE FRIEND REQUEST ─────────────────────────────
+@main.route('/friends/decline/<int:friendship_id>', methods=['POST'])
+@login_required
+def decline_friend_request(friendship_id):
+    friendship = Friendship.query.get_or_404(friendship_id)
+
+    if friendship.receiver_id != current_user.id:
+        message = 'You do not have permission to decline this friend request.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 403
+
+        flash(message, 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.status != 'pending':
+        message = 'This friend request is no longer pending.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'info')
+        return redirect(url_for('main.friends'))
+
+    requester_username = friendship.requester.username
+    friendship_id = friendship.id
+
+    db.session.delete(friendship)
+    db.session.commit()
+
+    message = f'Friend request from {requester_username} declined.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friendship_id': friendship_id
+        })
+
+    flash(message, 'info')
+    return redirect(url_for('main.friends'))
+
+# ─── REMOVE FRIEND ──────────────────────────────────────
+@main.route('/friends/remove/<int:user_id>', methods=['POST'])
+@login_required
+def remove_friend(user_id):
+    friendship = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            db.and_(
+                Friendship.requester_id == current_user.id,
+                Friendship.receiver_id == user_id
+            ),
+            db.and_(
+                Friendship.requester_id == user_id,
+                Friendship.receiver_id == current_user.id
+            )
+        )
+    ).first()
+
+    if not friendship:
+        message = 'Friendship not found.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 404
+
+        flash(message, 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.requester_id == current_user.id:
+        friend = friendship.receiver
+    else:
+        friend = friendship.requester
+
+    friend_id = friend.id
+    friend_username = friend.username
+
+    db.session.delete(friendship)
+    db.session.commit()
+
+    message = f'{friend_username} has been removed from your friends.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friend_id': friend_id
+        })
+
+    flash(message, 'success')
+    return redirect(url_for('main.friends'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
