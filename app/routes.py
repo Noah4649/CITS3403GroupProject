@@ -532,7 +532,12 @@ def remove_friend(user_id):
     ).first()
 
     if not friendship:
-        flash('Friendship not found.', 'danger')
+        message = 'Friendship not found.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 404
+
+        flash(message, 'danger')
         return redirect(url_for('main.friends'))
 
     if friendship.requester_id == current_user.id:
@@ -540,12 +545,22 @@ def remove_friend(user_id):
     else:
         friend = friendship.requester
 
+    friend_id = friend.id
     friend_username = friend.username
 
     db.session.delete(friendship)
     db.session.commit()
 
-    flash(f'{friend_username} has been removed from your friends.', 'success')
+    message = f'{friend_username} has been removed from your friends.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'friend_id': friend_id
+        })
+
+    flash(message, 'success')
     return redirect(url_for('main.friends'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────

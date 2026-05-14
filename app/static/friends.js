@@ -171,5 +171,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Something went wrong while declining the friend request.');
             });
         }
+
+        // Confirm and remove friend without refreshing
+        if (form.classList.contains('remove-friend-form')) {
+            event.preventDefault();
+
+            const confirmed = confirm('Are you sure you want to remove this friend?');
+
+            if (!confirmed) {
+                return;
+            }
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Could not remove friend.');
+                    return;
+                }
+
+                const row = document.getElementById(`friend-row-${data.friend_id}`);
+
+                if (row) {
+                    row.remove();
+                }
+
+                addEmptyRowIfNeeded(friendsTableBody, 3, 'You have not added any friends yet.');
+            })
+            .catch(error => {
+                console.error('Remove friend error:', error);
+                alert('Something went wrong while removing this friend.');
+            });
+        }
     });
 });
