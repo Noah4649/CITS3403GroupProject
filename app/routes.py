@@ -352,6 +352,8 @@ def friends():
         friends=friends
     )
 
+def wants_json_response():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
 # ─── SEND FRIEND REQUEST ────────────────────────────────
 @main.route('/friends/request/<int:user_id>', methods=['POST'])
@@ -360,7 +362,12 @@ def send_friend_request(user_id):
     receiver = User.query.get_or_404(user_id)
 
     if receiver.id == current_user.id:
-        flash('You cannot send a friend request to yourself.', 'danger')
+        message = 'You cannot send a friend request to yourself.'
+
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 400
+
+        flash(message, 'danger')
         return redirect(url_for('main.friends'))
 
     existing_friendship = Friendship.query.filter(
@@ -378,12 +385,16 @@ def send_friend_request(user_id):
 
     if existing_friendship:
         if existing_friendship.status == 'accepted':
-            flash(f'You are already friends with {receiver.username}.', 'info')
+            message = f'You are already friends with {receiver.username}.'
         elif existing_friendship.status == 'pending':
-            flash('A friend request is already pending.', 'info')
+            message = 'A friend request is already pending.'
         else:
-            flash('A friendship record already exists with this user.', 'info')
+            message = 'A friendship record already exists with this user.'
 
+        if wants_json_response():
+            return jsonify({'success': False, 'message': message}), 409
+
+        flash(message, 'info')
         return redirect(url_for('main.friends', q=receiver.username))
 
     new_request = Friendship(
@@ -395,7 +406,21 @@ def send_friend_request(user_id):
     db.session.add(new_request)
     db.session.commit()
 
-    flash(f'Friend request sent to {receiver.username}.', 'success')
+    message = f'Friend request sent to {receiver.username}.'
+
+    if wants_json_response():
+        return jsonify({
+            'success': True,
+            'message': message,
+            'request': {
+                'id': new_request.id,
+                'receiver_id': receiver.id,
+                'receiver_username': receiver.username,
+                'status': new_request.status
+            }
+        })
+
+    flash(message, 'success')
     return redirect(url_for('main.friends', q=receiver.username))
 
 # ─── ACCEPT FRIEND REQUEST ──────────────────────────────

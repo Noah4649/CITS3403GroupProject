@@ -57,7 +57,7 @@
                                             <td>{{ user.username }}</td>
                                             <td>{{ user.email }}</td>
                                             <td>
-                                                <form method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
+                                                <form class="send-friend-request-form" method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
                                                     <button type="submit" class="btn btn-outline-primary btn-sm">
                                                         Add Friend
                                                     </button>
@@ -142,16 +142,16 @@
                                             <th>Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="sent-requests-body">
                                         {% if sent_requests %}
                                             {% for request in sent_requests %}
-                                                <tr>
+                                                <tr id="sent-request-row-{{ request.id }}">
                                                     <td>{{ request.receiver.username }}</td>
                                                     <td>{{ request.status|capitalize }}</td>
                                                 </tr>
                                             {% endfor %}
                                         {% else %}
-                                            <tr>
+                                            <tr class="empty-row">
                                                 <td colspan="2">No sent friend requests.</td>
                                             </tr>
                                         {% endif %}
@@ -214,4 +214,8 @@
 
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{{ url_for('static', filename='friends.js') }}"></script>
 {% endblock %}
