@@ -43,7 +43,12 @@
                     </form>
 
                     <div class="table-responsive leaderboard-table-scroll mt-3">
-                        <table class="table text-center custom-table mb-0">
+                        <table class="table text-center custom-table mb-0" style="table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 25%;">
+                                <col style="width: 50%;">
+                                <col style="width: 25%;">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th>Username</th>
@@ -75,7 +80,7 @@
                                 {% else %}
                                     <tr class="empty-row">
                                         <td>-</td>
-                                        <td>Search for users to send a friend request.</td>
+                                        <td>Start typing to search.</td>
                                         <td>-</td>
                                     </tr>
                                 {% endif %}

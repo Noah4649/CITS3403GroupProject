@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     friendSearchResultsBody.innerHTML = `
                         <tr class="empty-row">
                             <td>-</td>
-                            <td>Start typing to search for users.</td>
+                            <td>Start typing to search.</td>
                             <td>-</td>
                         </tr>
                     `;
