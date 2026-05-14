@@ -9,6 +9,7 @@ import hmac
 
 from app import db, mail
 from app.models import User, Workout, Meal, Achievement, Exercise, Feedback, Goal, Report, Comment, FeedPost, FeedPostComment, Friendship
+from app.achievements import check_and_award_achievements
 
 
 main = Blueprint('main', __name__)
