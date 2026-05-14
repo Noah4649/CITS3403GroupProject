@@ -398,6 +398,48 @@ def send_friend_request(user_id):
     flash(f'Friend request sent to {receiver.username}.', 'success')
     return redirect(url_for('main.friends', q=receiver.username))
 
+# ─── ACCEPT FRIEND REQUEST ──────────────────────────────
+@main.route('/friends/accept/<int:friendship_id>', methods=['POST'])
+@login_required
+def accept_friend_request(friendship_id):
+    friendship = Friendship.query.get_or_404(friendship_id)
+
+    if friendship.receiver_id != current_user.id:
+        flash('You do not have permission to accept this friend request.', 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.status != 'pending':
+        flash('This friend request is no longer pending.', 'info')
+        return redirect(url_for('main.friends'))
+
+    friendship.status = 'accepted'
+    db.session.commit()
+
+    flash(f'You are now friends with {friendship.requester.username}.', 'success')
+    return redirect(url_for('main.friends'))
+
+# ─── DECLINE FRIEND REQUEST ─────────────────────────────
+@main.route('/friends/decline/<int:friendship_id>', methods=['POST'])
+@login_required
+def decline_friend_request(friendship_id):
+    friendship = Friendship.query.get_or_404(friendship_id)
+
+    if friendship.receiver_id != current_user.id:
+        flash('You do not have permission to decline this friend request.', 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.status != 'pending':
+        flash('This friend request is no longer pending.', 'info')
+        return redirect(url_for('main.friends'))
+
+    requester_username = friendship.requester.username
+
+    db.session.delete(friendship)
+    db.session.commit()
+
+    flash(f'Friend request from {requester_username} declined.', 'info')
+    return redirect(url_for('main.friends'))
+
 # ─── REMOVE FRIEND PLACEHOLDER ──────────────────────────
 @main.route('/friends/remove/<int:user_id>', methods=['POST'])
 @login_required
