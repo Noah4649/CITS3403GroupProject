@@ -512,14 +512,38 @@ textarea.form-control {
     color: var(--color-text);
 }
 
+/* ── Overall leaderboard table ── */
+.overall-leaderboard-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.overall-leaderboard-table th:nth-child(1),
+.overall-leaderboard-table td:nth-child(1) {
+    width: 25%;
+}
+
+.overall-leaderboard-table th:nth-child(2),
+.overall-leaderboard-table td:nth-child(2) {
+    width: 50%;
+    text-align: center !important;
+}
+
+.overall-leaderboard-table th:nth-child(3),
+.overall-leaderboard-table td:nth-child(3) {
+    width: 25%;
+}
+
 /* ── Calories Chart ── */
 .calories-chart-wrapper {
     height: 320px;
 }
 
 :root {
-    --chart-calories-line: #3b8eea;
-    --chart-calories-fill: rgba(59, 142, 234, 0.15);
+    --chart-calories-line: #f5a623;
+    --chart-calories-fill: rgba(245, 166, 35, 0.15);
+    --chart-consumed-line: #3b8eea;
+    --chart-consumed-fill: rgba(59, 142, 234, 0.15);
     --chart-grid-line: rgba(255, 255, 255, 0.08);
 }
 
@@ -684,12 +708,9 @@ textarea.form-control {
 }
 
 /* ── Leaderboard Page ── */
-.leaderboard-list-scroll {
-    max-height: 220px;
-    overflow-y: auto;
-}
 
 .leaderboard-table-scroll {
     max-height: 250px;
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
