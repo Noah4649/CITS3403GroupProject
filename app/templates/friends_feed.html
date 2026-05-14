@@ -33,7 +33,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h3 class="card-title mb-1">{{ workout.user.username }}</h3>
+                            <h3 class="card-title mb-1">
+                                <a href="{{ url_for('main.user_profile', user_id=workout.user_id) }}" class="text-decoration-none">{{ workout.user.username }}</a>
+                            </h3>
                             <p class="text-muted small mb-0">{{ workout.date.strftime('%d %b %Y %H:%M') }}</p>
                         </div>
 
@@ -78,7 +80,7 @@
                                 {% for comment in workout.comments|sort(attribute='created_at') %}
                                     {# Comment ownership uses user IDs; usernames are only shown as labels. #}
                                     <div class="mb-3 border-bottom pb-2" data-owner-id="{{ comment.user_id }}">
-                                        <strong>{{ comment.user.username }}</strong>
+                                        <strong><a href="{{ url_for('main.user_profile', user_id=comment.user_id) }}" class="text-decoration-none">{{ comment.user.username }}</a></strong>
                                         <span class="text-muted small">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</span>
                                         <p class="mb-0">{{ comment.text }}</p>
                                     </div>
@@ -99,7 +101,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h3 class="card-title mb-1">{{ post.user.username }}</h3>
+                            <h3 class="card-title mb-1">
+                                <a href="{{ url_for('main.user_profile', user_id=post.user_id) }}" class="text-decoration-none">{{ post.user.username }}</a>
+                            </h3>
                             <p class="text-muted small mb-0">{{ post.created_at.strftime('%d %b %Y %H:%M') }}</p>
                         </div>
 
@@ -119,7 +123,7 @@
                                 {% for comment in post.comments|sort(attribute='created_at') %}
                                     {# Comment ownership uses user IDs; usernames are only shown as labels. #}
                                     <div class="mb-3 border-bottom pb-2" data-owner-id="{{ comment.user_id }}">
-                                        <strong>{{ comment.user.username }}</strong>
+                                        <strong><a href="{{ url_for('main.user_profile', user_id=comment.user_id) }}" class="text-decoration-none">{{ comment.user.username }}</a></strong>
                                         <span class="text-muted small">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</span>
                                         <p class="mb-0">{{ comment.text }}</p>
                                     </div>
