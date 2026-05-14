@@ -290,10 +290,18 @@ def workout_finish(workout_id):
 
     workout.duration_mins = duration_mins
     workout.calories_burned = calories_burned
+
+    new_achievements = check_and_award_achievements(current_user.id)
+
     db.session.commit()
 
-    flash(f'Nice work! "{workout.title}" saved to your history.')
-    return redirect(url_for('main.history'))
+    if new_achievements:
+        names = ", ".join(a.title for a in new_achievements)
+        flash(f"Achievement unlocked: {names}!", "success")
+    else:
+        flash(f'Nice work! "{workout.title}" saved to your history.', "success")
+
+    return redirect(url_for('main.profile'))
 
 # ─── FRIENDS ────────────────────────────────────────────
 @main.route('/friends')
