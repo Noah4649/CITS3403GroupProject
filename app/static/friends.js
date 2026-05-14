@@ -134,40 +134,48 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (friendSearchForm && friendSearchInput && friendSearchResultsBody) {
+        let searchTimeout = null;
+
         friendSearchForm.addEventListener('submit', function (event) {
             event.preventDefault();
+        });
 
+        friendSearchInput.addEventListener('input', function () {
             const query = friendSearchInput.value.trim();
 
-            if (!query) {
-                friendSearchResultsBody.innerHTML = `
-                    <tr class="empty-row">
-                        <td>-</td>
-                        <td>Enter a username or email to search.</td>
-                        <td>-</td>
-                    </tr>
-                `;
-                return;
-            }
+            clearTimeout(searchTimeout);
 
-            fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    alert(data.message || 'Could not search for users.');
+            searchTimeout = setTimeout(function () {
+                if (!query) {
+                    friendSearchResultsBody.innerHTML = `
+                        <tr class="empty-row">
+                            <td>-</td>
+                            <td>Start typing to search for users.</td>
+                            <td>-</td>
+                        </tr>
+                    `;
                     return;
                 }
 
-                renderFriendSearchResults(data.users);
-            })
-            .catch(error => {
-                console.error('Friend search error:', error);
-                alert('Something went wrong while searching for users.');
-            });
+                fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Could not search for users.');
+                        return;
+                    }
+
+                    renderFriendSearchResults(data.users);
+                })
+                .catch(error => {
+                    console.error('Friend search error:', error);
+                    alert('Something went wrong while searching for users.');
+                });
+            }, 250);
         });
     }
 
