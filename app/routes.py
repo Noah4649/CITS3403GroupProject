@@ -1608,3 +1608,30 @@ def api_edit_profile():
 
     db.session.commit()
     return jsonify({'success': True, 'message': 'Profile updated successfully.'})
+
+# ─── OTHER USER PROFILE ─────────────────────────────────
+@main.route('/user/<int:user_id>')
+@login_required
+def user_profile(user_id):
+    # Redirect to own profile if the user clicks their own name
+    if user_id == current_user.id:
+        return redirect(url_for('main.profile'))
+
+    user = User.query.get_or_404(user_id)
+
+    public_workouts = Workout.query.filter_by(
+        user_id=user_id,
+        is_public=True
+    ).order_by(Workout.date.desc()).all()
+
+    achievements = Achievement.query.filter_by(user_id=user_id).all()
+
+    total_calories_burned = sum(w.calories_burned or 0 for w in public_workouts)
+
+    return render_template(
+        'user_profile.html',
+        user=user,
+        workouts=public_workouts,
+        achievements=achievements,
+        total_calories_burned=total_calories_burned
+    )
