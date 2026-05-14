@@ -440,11 +440,39 @@ def decline_friend_request(friendship_id):
     flash(f'Friend request from {requester_username} declined.', 'info')
     return redirect(url_for('main.friends'))
 
-# ─── REMOVE FRIEND PLACEHOLDER ──────────────────────────
+# ─── REMOVE FRIEND ──────────────────────────────────────
 @main.route('/friends/remove/<int:user_id>', methods=['POST'])
 @login_required
 def remove_friend(user_id):
-    flash('Remove friend functionality has not been added yet.', 'info')
+    friendship = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            db.and_(
+                Friendship.requester_id == current_user.id,
+                Friendship.receiver_id == user_id
+            ),
+            db.and_(
+                Friendship.requester_id == user_id,
+                Friendship.receiver_id == current_user.id
+            )
+        )
+    ).first()
+
+    if not friendship:
+        flash('Friendship not found.', 'danger')
+        return redirect(url_for('main.friends'))
+
+    if friendship.requester_id == current_user.id:
+        friend = friendship.receiver
+    else:
+        friend = friendship.requester
+
+    friend_username = friend.username
+
+    db.session.delete(friendship)
+    db.session.commit()
+
+    flash(f'{friend_username} has been removed from your friends.', 'success')
     return redirect(url_for('main.friends'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────
