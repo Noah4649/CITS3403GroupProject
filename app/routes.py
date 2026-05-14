@@ -299,14 +299,111 @@ def workout_finish(workout_id):
 @main.route('/friends')
 @login_required
 def friends():
+    search_query = (request.args.get('q') or '').strip()
+    search_results = []
+
+    if search_query:
+        search_results = User.query.filter(
+            User.id != current_user.id,
+            db.or_(
+                User.username.ilike(f'%{search_query}%'),
+                User.email.ilike(f'%{search_query}%')
+            )
+        ).order_by(
+            User.username.asc()
+        ).limit(10).all()
+
+    incoming_requests = Friendship.query.filter_by(
+        receiver_id=current_user.id,
+        status='pending'
+    ).order_by(
+        Friendship.created_at.desc()
+    ).all()
+
+    sent_requests = Friendship.query.filter_by(
+        requester_id=current_user.id,
+        status='pending'
+    ).order_by(
+        Friendship.created_at.desc()
+    ).all()
+
+    accepted_friendships = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            Friendship.requester_id == current_user.id,
+            Friendship.receiver_id == current_user.id
+        )
+    ).all()
+
+    friends = []
+
+    for friendship in accepted_friendships:
+        if friendship.requester_id == current_user.id:
+            friends.append(friendship.receiver)
+        else:
+            friends.append(friendship.requester)
+
     return render_template(
         'friends.html',
-        search_query='',
-        search_results=[],
-        incoming_requests=[],
-        sent_requests=[],
-        friends=[]
+        search_query=search_query,
+        search_results=search_results,
+        incoming_requests=incoming_requests,
+        sent_requests=sent_requests,
+        friends=friends
     )
+
+
+# ─── SEND FRIEND REQUEST ────────────────────────────────
+@main.route('/friends/request/<int:user_id>', methods=['POST'])
+@login_required
+def send_friend_request(user_id):
+    receiver = User.query.get_or_404(user_id)
+
+    if receiver.id == current_user.id:
+        flash('You cannot send a friend request to yourself.', 'danger')
+        return redirect(url_for('main.friends'))
+
+    existing_friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(
+                Friendship.requester_id == current_user.id,
+                Friendship.receiver_id == receiver.id
+            ),
+            db.and_(
+                Friendship.requester_id == receiver.id,
+                Friendship.receiver_id == current_user.id
+            )
+        )
+    ).first()
+
+    if existing_friendship:
+        if existing_friendship.status == 'accepted':
+            flash(f'You are already friends with {receiver.username}.', 'info')
+        elif existing_friendship.status == 'pending':
+            flash('A friend request is already pending.', 'info')
+        else:
+            flash('A friendship record already exists with this user.', 'info')
+
+        return redirect(url_for('main.friends', q=receiver.username))
+
+    new_request = Friendship(
+        requester_id=current_user.id,
+        receiver_id=receiver.id,
+        status='pending'
+    )
+
+    db.session.add(new_request)
+    db.session.commit()
+
+    flash(f'Friend request sent to {receiver.username}.', 'success')
+    return redirect(url_for('main.friends', q=receiver.username))
+
+# ─── REMOVE FRIEND PLACEHOLDER ──────────────────────────
+@main.route('/friends/remove/<int:user_id>', methods=['POST'])
+@login_required
+def remove_friend(user_id):
+    flash('Remove friend functionality has not been added yet.', 'info')
+    return redirect(url_for('main.friends'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────
 @main.route('/friends-feed')
