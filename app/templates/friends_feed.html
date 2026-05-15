@@ -147,6 +147,15 @@
     </div>
 </section>
 
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+            <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">View Profile</a>
+        </div>
+    </div>
+</div>
+
 <script src="{{ url_for('static', filename='friendsfeed.js') }}"></script>
 
 {% endblock %}
