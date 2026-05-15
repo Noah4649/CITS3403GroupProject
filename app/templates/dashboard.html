@@ -18,7 +18,10 @@
                     <p class="text-muted">No workouts logged today.</p>
                 {% endif %}
             </div>
-            <button class="btn btn-outline-secondary btn-sm btn-edit mt-3">Edit</button>
+            <div class="d-flex gap-2 mt-3 flex-wrap">
+                <a href="{{ url_for('main.start_workout') }}" class="btn btn-primary btn-sm">Start Workout</a>
+                <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary btn-sm btn-edit">Edit</a>
+            </div>
         </div>
     </section>
 
@@ -43,7 +46,7 @@
                         <span>Total:</span>
                         <span class="cal-total-val fw-bold">{{ total_calories }} kcal</span>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm btn-edit mt-3">Edit</button>
+                    <a href="{{ url_for('main.calories') }}" class="btn btn-outline-secondary btn-sm btn-edit mt-3">Edit</a>
                 </div>
             </section>
         </div>
@@ -63,7 +66,7 @@
                     </ul>
                     <div class="profile-actions d-flex gap-2 mt-3">
                         <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm">View More</a>
-                        <button class="btn btn-outline-primary btn-sm">Edit Goals</button>
+                        <a href="{{ url_for('main.profile') }}#editProfileModal" class="btn btn-outline-primary btn-sm">Edit Goals</a>
                     </div>
                 </div>
                 <div class="col-auto">
