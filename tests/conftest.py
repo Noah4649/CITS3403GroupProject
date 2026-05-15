@@ -7,6 +7,9 @@ from werkzeug.security import generate_password_hash
 @pytest.fixture
 def app():
     """Create a fresh app instance with in-memory database for each test."""
+    # FITTRACK-TESTING-NOTE: These fixtures are intended to run against
+    # sqlite:///:memory:, but create_app() currently applies the database URI
+    # before this update. The next testing fix moves config injection earlier.
     app = create_app()
     app.config.update({
         'TESTING': True,
