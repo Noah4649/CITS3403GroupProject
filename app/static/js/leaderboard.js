@@ -114,5 +114,36 @@
         });
     });
 
+    /* ── Overall leaderboard scope toggle (Friends / Global) ── */
+    const overallScopeButtons = document.querySelectorAll('.js-overall-scope');
+    overallScopeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const scope = btn.dataset.scope;
+            overallScopeButtons.forEach((b) => {
+                const active = b === btn;
+                b.classList.toggle('active', active);
+                b.classList.toggle('btn-primary', active);
+                b.classList.toggle('btn-outline-primary', !active);
+                b.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            document.querySelectorAll('.overall-panel').forEach((panel) => {
+                panel.hidden = panel.dataset.scope !== scope;
+            });
+            applyFilter();
+        });
+    });
+
+    /* ── Compare-by-metric dropdown ───────────────────────── */
+    const metricSelect = document.getElementById('compare-metric');
+    if (metricSelect) {
+        metricSelect.addEventListener('change', () => {
+            const metric = metricSelect.value;
+            document.querySelectorAll('.compare-panel').forEach((panel) => {
+                panel.hidden = panel.dataset.metric !== metric;
+            });
+            applyFilter();
+        });
+    }
+
     highlightCurrentUser();
 }());

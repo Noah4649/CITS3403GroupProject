@@ -2,6 +2,89 @@
 
 {% block title %}Leaderboard – FitTrack{% endblock %}
 
+{# ─── Macros ──────────────────────────────────────────── #}
+
+{% macro render_overall(entries) %}
+    <div class="leaderboard-table-scroll">
+        <table class="table text-center custom-table overall-leaderboard-table mb-0 js-sortable-leaderboard">
+            <thead>
+                <tr>
+                    <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
+                    <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
+                    <th class="js-sort" data-sort-key="avg" data-sort-type="number" role="button">Average Rank</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if entries %}
+                    {% for entry in entries %}
+                        <tr data-username="{{ entry.username|lower }}"
+                            data-rank="{{ entry.rank }}"
+                            data-avg="{{ entry.average_rank }}">
+                            <td>{{ entry.rank }}</td>
+                            <td>{{ entry.username }}</td>
+                            <td>{{ "%.2f"|format(entry.average_rank) }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="leaderboard-empty-row">
+                        <td colspan="3">No leaderboard data available yet.</td>
+                    </tr>
+                {% endif %}
+                <tr class="leaderboard-no-results-row" hidden>
+                    <td colspan="3" class="text-muted">No matching users.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
+{#
+    Renders one metric leaderboard table.
+    metric is one of: 'calories', 'workouts', 'duration', 'bench', 'squat', 'deadlift'.
+#}
+{% macro render_metric_table(entries, metric) %}
+    {% set spec = {
+        'calories': {'header': 'Calories', 'field': 'total_calories', 'unit': ' kcal', 'empty': 'No calorie data available.'},
+        'workouts': {'header': 'Workouts', 'field': 'workout_count',  'unit': '',      'empty': 'No workout data available.'},
+        'duration': {'header': 'Minutes',  'field': 'total_duration', 'unit': ' mins', 'empty': 'No training time data available.'},
+        'bench':    {'header': 'Weight',   'field': 'weight_kg',      'unit': ' kg',   'empty': 'No bench press data available.'},
+        'squat':    {'header': 'Weight',   'field': 'weight_kg',      'unit': ' kg',   'empty': 'No squat data available.'},
+        'deadlift': {'header': 'Weight',   'field': 'weight_kg',      'unit': ' kg',   'empty': 'No deadlift data available.'},
+    }[metric] %}
+    {% set sort_key = 'value' %}
+    <div class="table-responsive leaderboard-table-scroll">
+        <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
+            <thead>
+                <tr>
+                    <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
+                    <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
+                    <th class="js-sort" data-sort-key="{{ sort_key }}" data-sort-type="number" role="button">{{ spec.header }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if entries %}
+                    {% for entry in entries %}
+                        <tr data-username="{{ entry.username|lower }}"
+                            data-rank="{{ entry.rank }}"
+                            data-value="{{ entry[spec.field] or 0 }}">
+                            <td>{{ entry.rank }}</td>
+                            <td>{{ entry.username }}</td>
+                            <td>{{ entry[spec.field] }}{{ spec.unit }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="leaderboard-empty-row">
+                        <td colspan="3">{{ spec.empty }}</td>
+                    </tr>
+                {% endif %}
+                <tr class="leaderboard-no-results-row" hidden>
+                    <td colspan="3" class="text-muted">No matching users.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
 {% block content %}
 
 <div class="leaderboard-page" data-current-username="{{ current_user.username|lower }}">
@@ -23,7 +106,7 @@
                    aria-label="Search users across all leaderboards">
         </section>
 
-        <!-- Overall leaderboard -->
+        <!-- Overall leaderboard with scope toggle -->
         <section class="mb-3">
             <div class="card app-card">
                 <div class="card-body">
@@ -32,286 +115,97 @@
                         Ranked by average position across calories burned, workouts completed, and training time.
                     </p>
 
-                    <div class="leaderboard-table-scroll">
-                        <table class="table text-center custom-table overall-leaderboard-table mb-0 js-sortable-leaderboard">
-                            <thead>
-                                <tr>
-                                    <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                    <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                    <th class="js-sort" data-sort-key="avg" data-sort-type="number" role="button">Average Rank</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if overall_leaderboard %}
-                                    {% for entry in overall_leaderboard %}
-                                        <tr data-username="{{ entry.username|lower }}"
-                                            data-rank="{{ entry.rank }}"
-                                            data-avg="{{ entry.average_rank }}">
-                                            <td>{{ entry.rank }}</td>
-                                            <td>{{ entry.username }}</td>
-                                            <td>{{ "%.2f"|format(entry.average_rank) }}</td>
-                                        </tr>
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="btn-group" role="group" aria-label="Overall leaderboard scope">
+                            <button type="button"
+                                    class="btn btn-primary js-overall-scope active"
+                                    data-scope="friends"
+                                    aria-pressed="true">Friends</button>
+                            <button type="button"
+                                    class="btn btn-outline-primary js-overall-scope"
+                                    data-scope="global"
+                                    aria-pressed="false">Global</button>
+                        </div>
+                    </div>
+
+                    {% if not has_friends %}
+                        <p class="text-center text-muted mb-3 js-no-friends-hint">
+                            You don't have any friends yet.
+                            <a href="{{ url_for('main.friends') }}">Add friends</a> to compare with them here.
+                        </p>
+                    {% endif %}
+
+                    <div class="overall-panel" data-scope="friends">
+                        {{ render_overall(overall_friends) }}
+                    </div>
+                    <div class="overall-panel" data-scope="global" hidden>
+                        {{ render_overall(overall_global) }}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compare by metric: friends vs global side-by-side -->
+        <section class="mb-3">
+            <div class="card app-card">
+                <div class="card-body">
+                    <h3 class="section-title section-title-lg text-center">Compare by metric</h3>
+                    <p class="section-title text-center">
+                        Pick a metric to see how friends stack up next to the global top 10.
+                    </p>
+
+                    <div class="d-flex justify-content-center mb-3">
+                        <label for="compare-metric" class="me-2 align-self-center mb-0">Metric:</label>
+                        <select id="compare-metric" class="form-select w-auto">
+                            <option value="calories">Calories burned</option>
+                            <option value="workouts">Workouts completed</option>
+                            <option value="duration">Training time</option>
+                            <option value="bench">Bench press</option>
+                            <option value="squat">Squat</option>
+                            <option value="deadlift">Deadlift</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card app-card h-100">
+                                <div class="card-body">
+                                    <h4 class="section-title section-title-lg text-center">Friends</h4>
+                                    {% if not has_friends %}
+                                        <p class="text-center text-muted mb-3 js-no-friends-hint">
+                                            You don't have any friends yet.
+                                            <a href="{{ url_for('main.friends') }}">Add friends</a> to compare with them here.
+                                        </p>
+                                    {% endif %}
+                                    {% for metric, board in friends_boards.items() %}
+                                        <div class="compare-panel"
+                                             data-scope="friends"
+                                             data-metric="{{ metric }}"
+                                             {% if not loop.first %}hidden{% endif %}>
+                                            {{ render_metric_table(board, metric) }}
+                                        </div>
                                     {% endfor %}
-                                {% else %}
-                                    <tr class="leaderboard-empty-row">
-                                        <td colspan="3">No leaderboard data available yet.</td>
-                                    </tr>
-                                {% endif %}
-                                <tr class="leaderboard-no-results-row" hidden>
-                                    <td colspan="3" class="text-muted">No matching users.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- General fitness leaderboards -->
-        <section class="mb-3">
-            <div class="row g-3">
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Total Workouts</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="workouts" data-sort-type="number" role="button">Workouts</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if workouts_completed_leaderboard %}
-                                            {% for entry in workouts_completed_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-workouts="{{ entry.workout_count or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.workout_count }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No workout data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <div class="col-md-6">
+                            <div class="card app-card h-100">
+                                <div class="card-body">
+                                    <h4 class="section-title section-title-lg text-center">Global</h4>
+                                    {% for metric, board in global_boards.items() %}
+                                        <div class="compare-panel"
+                                             data-scope="global"
+                                             data-metric="{{ metric }}"
+                                             {% if not loop.first %}hidden{% endif %}>
+                                            {{ render_metric_table(board, metric) }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Calories Burned</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="calories" data-sort-type="number" role="button">Calories</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if calories_leaderboard %}
-                                            {% for entry in calories_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-calories="{{ entry.total_calories or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.total_calories }} kcal</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No calorie data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Training Time</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="duration" data-sort-type="number" role="button">Minutes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if training_time_leaderboard %}
-                                            {% for entry in training_time_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-duration="{{ entry.total_duration or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.total_duration }} mins</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No training time data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Strength leaderboards -->
-        <section class="mb-3">
-            <div class="row g-3">
-
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Bench Press</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="weight" data-sort-type="number" role="button">Weight</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if bench_leaderboard %}
-                                            {% for entry in bench_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-weight="{{ entry.weight_kg or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.weight_kg }} kg</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No bench press data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Squat</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="weight" data-sort-type="number" role="button">Weight</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if squat_leaderboard %}
-                                            {% for entry in squat_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-weight="{{ entry.weight_kg or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.weight_kg }} kg</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No squat data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Deadlift</h3>
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0 js-sortable-leaderboard">
-                                    <thead>
-                                        <tr>
-                                            <th class="js-sort" data-sort-key="rank" data-sort-type="number" role="button">Rank</th>
-                                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
-                                            <th class="js-sort" data-sort-key="weight" data-sort-type="number" role="button">Weight</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if deadlift_leaderboard %}
-                                            {% for entry in deadlift_leaderboard %}
-                                                <tr data-username="{{ entry.username|lower }}"
-                                                    data-rank="{{ entry.rank }}"
-                                                    data-weight="{{ entry.weight_kg or 0 }}">
-                                                    <td>{{ entry.rank }}</td>
-                                                    <td>{{ entry.username }}</td>
-                                                    <td>{{ entry.weight_kg }} kg</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="leaderboard-empty-row">
-                                                <td colspan="3">No deadlift data available.</td>
-                                            </tr>
-                                        {% endif %}
-                                        <tr class="leaderboard-no-results-row" hidden>
-                                            <td colspan="3" class="text-muted">No matching users.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </section>
 
