@@ -1368,181 +1368,161 @@ def leaderboard():
 
         return ranked_entries
 
-    # Total calories burned leaderboard
-    calories_leaderboard = db.session.query(
-        User.username,
-        db.func.sum(Workout.calories_burned).label('total_calories')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.sum(Workout.calories_burned).desc(),
-        User.username.asc()
-    ).limit(10).all()
-
-    calories_leaderboard = add_competition_ranks(
-        calories_leaderboard,
-        'total_calories'
-    )
-
-    # Workouts completed leaderboard
-    workouts_completed_leaderboard = db.session.query(
-        User.username,
-        db.func.count(Workout.id).label('workout_count')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.count(Workout.id).desc(),
-        User.username.asc()
-    ).limit(10).all()
-
-    workouts_completed_leaderboard = add_competition_ranks(
-        workouts_completed_leaderboard,
-        'workout_count'
-    )
-
-    # Total training time leaderboard
-    training_time_leaderboard = db.session.query(
-        User.username,
-        db.func.sum(Workout.duration_mins).label('total_duration')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.sum(Workout.duration_mins).desc(),
-        User.username.asc()
-    ).limit(10).all()
-
-    training_time_leaderboard = add_competition_ranks(
-        training_time_leaderboard,
-        'total_duration'
-    )
-
-    # ─── Overall leaderboard based on average rank ───────────
-    leaderboard_scores = {}
-
-    # Add calories leaderboard rankings
-    for entry in calories_leaderboard:
-        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
-
-    # Add workouts completed leaderboard rankings
-    for entry in workouts_completed_leaderboard:
-        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
-
-    # Add training time leaderboard rankings
-    for entry in training_time_leaderboard:
-        leaderboard_scores.setdefault(entry['username'], []).append(entry['rank'])
-
-    overall_leaderboard = []
-
-    for username, ranks in leaderboard_scores.items():
-        average_rank = sum(ranks) / len(ranks)
-
-        overall_leaderboard.append({
-            'username': username,
-            'average_rank': average_rank,
-            'categories_counted': len(ranks)
-        })
-
-    overall_leaderboard = sorted(
-        overall_leaderboard,
-        key=lambda entry: (
-            entry['average_rank'],
-            -entry['categories_counted'],
-            entry['username']
+    # Build accepted friend ID list (includes current user so they appear in friends views)
+    accepted_friendships = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            Friendship.requester_id == current_user.id,
+            Friendship.receiver_id == current_user.id
         )
-    )[:10]
+    ).all()
 
-    overall_leaderboard = add_overall_ranks(overall_leaderboard)
+    friend_ids = []
+    for friendship in accepted_friendships:
+        if friendship.requester_id == current_user.id:
+            friend_ids.append(friendship.receiver_id)
+        else:
+            friend_ids.append(friendship.requester_id)
 
-    # Bench press leaderboard
-    bench_leaderboard = db.session.query(
-        User.username,
-        db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).join(
-        Exercise,
-        Exercise.workout_id == Workout.id
-    ).filter(
-        db.func.lower(Exercise.name).like('%bench press%')
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.max(Exercise.weight_kg).desc(),
-        User.username.asc()
-    ).limit(10).all()
+    has_friends = len(friend_ids) > 0
+    scope_ids = friend_ids + [current_user.id]
 
-    bench_leaderboard = add_competition_ranks(
-        bench_leaderboard,
-        'weight_kg'
+    # ─── Per-metric query factories ──────────────────────────
+    def calories_query(ids):
+        q = db.session.query(
+            User.username,
+            db.func.sum(Workout.calories_burned).label('total_calories')
+        ).join(
+            Workout, Workout.user_id == User.id
+        )
+        if ids is not None:
+            q = q.filter(User.id.in_(ids))
+        return q.group_by(User.id).order_by(
+            db.func.sum(Workout.calories_burned).desc(),
+            User.username.asc()
+        )
+
+    def workouts_query(ids):
+        q = db.session.query(
+            User.username,
+            db.func.count(Workout.id).label('workout_count')
+        ).join(
+            Workout, Workout.user_id == User.id
+        )
+        if ids is not None:
+            q = q.filter(User.id.in_(ids))
+        return q.group_by(User.id).order_by(
+            db.func.count(Workout.id).desc(),
+            User.username.asc()
+        )
+
+    def duration_query(ids):
+        q = db.session.query(
+            User.username,
+            db.func.sum(Workout.duration_mins).label('total_duration')
+        ).join(
+            Workout, Workout.user_id == User.id
+        )
+        if ids is not None:
+            q = q.filter(User.id.in_(ids))
+        return q.group_by(User.id).order_by(
+            db.func.sum(Workout.duration_mins).desc(),
+            User.username.asc()
+        )
+
+    def exercise_query(ids, name_like):
+        q = db.session.query(
+            User.username,
+            db.func.max(Exercise.weight_kg).label('weight_kg')
+        ).join(
+            Workout, Workout.user_id == User.id
+        ).join(
+            Exercise, Exercise.workout_id == Workout.id
+        ).filter(
+            db.func.lower(Exercise.name).like(name_like)
+        )
+        if ids is not None:
+            q = q.filter(User.id.in_(ids))
+        return q.group_by(User.id).order_by(
+            db.func.max(Exercise.weight_kg).desc(),
+            User.username.asc()
+        )
+
+    def build_pair(query_factory, value_field, n=10):
+        global_rows = query_factory(None).limit(n).all()
+        friends_rows = query_factory(scope_ids).limit(n).all()
+        return (
+            add_competition_ranks(global_rows, value_field),
+            add_competition_ranks(friends_rows, value_field),
+        )
+
+    calories_global, calories_friends = build_pair(calories_query, 'total_calories')
+    workouts_global, workouts_friends = build_pair(workouts_query, 'workout_count')
+    duration_global, duration_friends = build_pair(duration_query, 'total_duration')
+    bench_global, bench_friends = build_pair(
+        lambda ids: exercise_query(ids, '%bench press%'), 'weight_kg'
+    )
+    squat_global, squat_friends = build_pair(
+        lambda ids: exercise_query(ids, '%squat%'), 'weight_kg'
+    )
+    deadlift_global, deadlift_friends = build_pair(
+        lambda ids: exercise_query(ids, '%deadlift%'), 'weight_kg'
     )
 
-    # Squat leaderboard
-    squat_leaderboard = db.session.query(
-        User.username,
-        db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).join(
-        Exercise,
-        Exercise.workout_id == Workout.id
-    ).filter(
-        db.func.lower(Exercise.name).like('%squat%')
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.max(Exercise.weight_kg).desc(),
-        User.username.asc()
-    ).limit(10).all()
+    # ─── Overall leaderboard (averaged across the 3 general metrics) ──
+    def build_overall(*metric_boards):
+        scores = {}
+        for board in metric_boards:
+            for entry in board:
+                scores.setdefault(entry['username'], []).append(entry['rank'])
 
-    squat_leaderboard = add_competition_ranks(
-        squat_leaderboard,
-        'weight_kg'
-    )
+        rows = []
+        for username, ranks in scores.items():
+            rows.append({
+                'username': username,
+                'average_rank': sum(ranks) / len(ranks),
+                'categories_counted': len(ranks),
+            })
 
-    # Deadlift leaderboard
-    deadlift_leaderboard = db.session.query(
-        User.username,
-        db.func.max(Exercise.weight_kg).label('weight_kg')
-    ).join(
-        Workout,
-        Workout.user_id == User.id
-    ).join(
-        Exercise,
-        Exercise.workout_id == Workout.id
-    ).filter(
-        db.func.lower(Exercise.name).like('%deadlift%')
-    ).group_by(
-        User.id
-    ).order_by(
-        db.func.max(Exercise.weight_kg).desc(),
-        User.username.asc()
-    ).limit(10).all()
+        rows = sorted(
+            rows,
+            key=lambda entry: (
+                entry['average_rank'],
+                -entry['categories_counted'],
+                entry['username'],
+            )
+        )[:10]
 
-    deadlift_leaderboard = add_competition_ranks(
-        deadlift_leaderboard,
-        'weight_kg'
-    )
+        return add_overall_ranks(rows)
+
+    overall_global = build_overall(calories_global, workouts_global, duration_global)
+    overall_friends = build_overall(calories_friends, workouts_friends, duration_friends)
+
+    global_boards = {
+        'calories': calories_global,
+        'workouts': workouts_global,
+        'duration': duration_global,
+        'bench': bench_global,
+        'squat': squat_global,
+        'deadlift': deadlift_global,
+    }
+
+    friends_boards = {
+        'calories': calories_friends,
+        'workouts': workouts_friends,
+        'duration': duration_friends,
+        'bench': bench_friends,
+        'squat': squat_friends,
+        'deadlift': deadlift_friends,
+    }
 
     return render_template(
         'leaderboard-page.html',
-        overall_leaderboard = add_overall_ranks(overall_leaderboard),
-        calories_leaderboard=calories_leaderboard,
-        workouts_completed_leaderboard=workouts_completed_leaderboard,
-        training_time_leaderboard=training_time_leaderboard,
-        bench_leaderboard=bench_leaderboard,
-        squat_leaderboard=squat_leaderboard,
-        deadlift_leaderboard=deadlift_leaderboard
+        overall_global=overall_global,
+        overall_friends=overall_friends,
+        global_boards=global_boards,
+        friends_boards=friends_boards,
+        has_friends=has_friends,
     )
 
 
