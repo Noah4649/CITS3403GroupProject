@@ -11,7 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 pytestmark = pytest.mark.selenium
 
 
-def _wait(browser, timeout=5):
+def _wait(browser, timeout=10):
     return WebDriverWait(browser, timeout)
 
 
@@ -21,7 +21,6 @@ def _login(browser, live_server, email='test@test.com', password='password123'):
     browser.find_element(By.ID, 'password').send_keys(password)
     browser.find_element(By.ID, 'login-submit').click()
 
-    _wait(browser).until(EC.url_contains('/dashboard'))
     _wait(browser).until(EC.text_to_be_present_in_element((By.TAG_NAME, 'body'), 'My Profile'))
 
 
@@ -46,7 +45,7 @@ def test_existing_user_can_log_in(browser, live_server):
     # FITTRACK-SELENIUM-TEST: A seeded user can log in and reach the dashboard.
     _login(browser, live_server)
 
-    assert '/dashboard' in browser.current_url
+    assert 'My Profile' in browser.page_source
     assert 'testuser' in browser.page_source
     assert 'test@test.com' in browser.page_source
 

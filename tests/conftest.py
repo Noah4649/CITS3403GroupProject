@@ -2,6 +2,7 @@ import pytest
 import os
 import socket
 import threading
+from pathlib import Path
 from app import create_app, db
 from app.models import User
 from sqlalchemy.pool import StaticPool
@@ -126,6 +127,7 @@ def browser():
     pytest.importorskip('selenium')
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
 
     options = ChromeOptions()
     options.page_load_strategy = 'eager'
@@ -141,7 +143,9 @@ def browser():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 
-    driver = webdriver.Chrome(options=options)
+    driver_path = _chromedriver_path()
+    service = ChromeService(executable_path=driver_path) if driver_path else None
+    driver = webdriver.Chrome(options=options, service=service)
     driver.implicitly_wait(2)
     driver.set_page_load_timeout(15)
 
@@ -168,5 +172,22 @@ def _chrome_binary_path():
     ):
         if os.path.exists(path):
             return path
+
+    return None
+
+
+def _chromedriver_path():
+    configured = os.getenv('CHROMEDRIVER')
+    if configured and os.path.exists(configured):
+        return configured
+
+    selenium_cache = Path.home() / '.cache' / 'selenium' / 'chromedriver'
+    cached_drivers = sorted(
+        selenium_cache.glob('**/chromedriver.exe'),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True
+    )
+    if cached_drivers:
+        return str(cached_drivers[0])
 
     return None
