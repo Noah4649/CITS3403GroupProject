@@ -85,7 +85,9 @@
                     </div>
                 </div>
                 <div class="col-auto">
-                    <div class="avatar-placeholder" id="user-avatar" aria-label="Profile picture"></div>
+                    <div class="avatar-placeholder profile-avatar">
+                    {{ current_user.username[0].upper() }}
+                    </div>
                 </div>
             </div>
             <a href="{{ url_for('main.friends_feed') }}" class="btn btn-friends w-100 mt-3">View Friends' Posts</a>
