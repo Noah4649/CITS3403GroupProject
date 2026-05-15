@@ -634,19 +634,53 @@ def remove_friend(user_id):
     return redirect(url_for('main.friends'))
 
 # ─── FRIENDS FEED ───────────────────────────────────────
+def get_visible_feed_user_ids():
+    """
+    Returns the current user's ID plus all accepted friend IDs.
+    Used to filter the friends feed.
+    """
+    accepted_friendships = Friendship.query.filter(
+        Friendship.status == 'accepted',
+        db.or_(
+            Friendship.requester_id == current_user.id,
+            Friendship.receiver_id == current_user.id
+        )
+    ).all()
+
+    visible_user_ids = [current_user.id]
+
+    for friendship in accepted_friendships:
+        if friendship.requester_id == current_user.id:
+            visible_user_ids.append(friendship.receiver_id)
+        else:
+            visible_user_ids.append(friendship.requester_id)
+
+    return visible_user_ids
+
+
 @main.route('/friends-feed')
 @login_required
 def friends_feed():
-    public_workouts = Workout.query.filter_by(is_public=True).order_by(
+    visible_user_ids = get_visible_feed_user_ids()
+
+    public_workouts = Workout.query.filter(
+        Workout.is_public == True,
+        Workout.user_id.in_(visible_user_ids)
+    ).order_by(
         Workout.date.desc()
     ).all()
-    feed_posts = FeedPost.query.order_by(
+
+    feed_posts = FeedPost.query.filter(
+        FeedPost.user_id.in_(visible_user_ids)
+    ).order_by(
         FeedPost.created_at.desc()
     ).all()
+
     feed_items = (
         [{'type': 'workout', 'item': workout, 'created_at': workout.date} for workout in public_workouts] +
         [{'type': 'post', 'item': post, 'created_at': post.created_at} for post in feed_posts]
     )
+
     feed_items.sort(key=lambda feed_item: feed_item['created_at'], reverse=True)
 
     return render_template(
@@ -726,10 +760,12 @@ def delete_friend_feed_workout(workout_id):
 @main.route('/friends-feed/posts/<int:post_id>/comments', methods=['POST'])
 @login_required
 def add_friend_feed_post_comment(post_id):
-    """
-    Saves comments on manual friend feed posts by post_id and user_id.
-    """
     feed_post = FeedPost.query.get_or_404(post_id)
+    visible_user_ids = get_visible_feed_user_ids()
+
+    if feed_post.user_id not in visible_user_ids:
+        abort(403)
+
     data = request.get_json(silent=True) or {}
     comment_text = (data.get('text') or request.form.get('text') or '').strip()
 
@@ -760,12 +796,10 @@ def add_friend_feed_post_comment(post_id):
 @main.route('/friends-feed/<int:workout_id>/comments', methods=['POST'])
 @login_required
 def add_friend_feed_comment(workout_id):
-    """
-    Saves friend feed comments by workout_id and user_id so refreshes keep them visible.
-    """
     workout = Workout.query.get_or_404(workout_id)
+    visible_user_ids = get_visible_feed_user_ids()
 
-    if not workout.is_public:
+    if not workout.is_public or workout.user_id not in visible_user_ids:
         abort(403)
 
     data = request.get_json(silent=True) or {}
