@@ -116,11 +116,19 @@ def profile():
     achievements = Achievement.query.filter_by(user_id=current_user.id).all()
     total_calories_burned = sum(w.calories_burned or 0 for w in workouts)
 
+    active_calorie_goal = Goal.query.filter_by(
+        user_id=current_user.id,
+        type='calories',
+        completed=False
+    ).first()
+    daily_calorie_goal = active_calorie_goal.target if active_calorie_goal else 600
+
     return render_template(
         'profile.html',
         workouts=workouts,
         achievements=achievements,
-        total_calories_burned=total_calories_burned
+        total_calories_burned=total_calories_burned,
+        daily_calorie_goal=daily_calorie_goal
     )
 
 
@@ -1588,6 +1596,33 @@ def admin():
     )
 
 # ─── API: EDIT PROFILE ──────────────────────────────────
+def _parse_calorie_goal(raw):
+    """Validate a daily calorie burn goal value. Returns (target, error)."""
+    if raw is None or str(raw).strip() == '':
+        return None, None
+    try:
+        target = int(raw)
+    except (TypeError, ValueError):
+        return None, 'Daily calorie goal must be a whole number.'
+    if target < 1 or target > 10000:
+        return None, 'Daily calorie goal must be between 1 and 10000.'
+    return target, None
+
+
+def _upsert_calorie_goal(user_id, target):
+    """Insert or update the active calorie goal row for the given user."""
+    goal_row = Goal.query.filter_by(
+        user_id=user_id, type='calories', completed=False
+    ).first()
+    if goal_row:
+        goal_row.target = target
+    else:
+        db.session.add(Goal(
+            user_id=user_id, type='calories', target=target,
+            current=0, completed=False
+        ))
+
+
 @main.route('/api/edit-profile', methods=['POST'])
 @login_required
 def api_edit_profile():
@@ -1602,6 +1637,10 @@ def api_edit_profile():
     weight = data.get('weight')
     height = data.get('height')
     goal = (data.get('goal') or '').strip()
+
+    calorie_goal, calorie_err = _parse_calorie_goal(data.get('daily_calorie_goal'))
+    if calorie_err:
+        return jsonify({'success': False, 'error': calorie_err}), 400
 
     # Check username is not already taken by another user
     if username and username != current_user.username:
@@ -1626,9 +1665,26 @@ def api_edit_profile():
             return jsonify({'success': False, 'error': 'Invalid height value.'}), 400
     if goal:
         current_user.goal = goal
+    if calorie_goal is not None:
+        _upsert_calorie_goal(current_user.id, calorie_goal)
 
     db.session.commit()
     return jsonify({'success': True, 'message': 'Profile updated successfully.'})
+
+
+@main.route('/api/calorie-goal', methods=['POST'])
+@login_required
+def api_update_calorie_goal():
+    data = request.get_json(silent=True) or {}
+    target, err = _parse_calorie_goal(data.get('daily_calorie_goal'))
+    if err:
+        return jsonify({'success': False, 'error': err}), 400
+    if target is None:
+        return jsonify({'success': False, 'error': 'Daily calorie goal is required.'}), 400
+
+    _upsert_calorie_goal(current_user.id, target)
+    db.session.commit()
+    return jsonify({'success': True, 'daily_calorie_goal': target})
 
 # ─── OTHER USER PROFILE ─────────────────────────────────
 @main.route('/user/<int:user_id>')

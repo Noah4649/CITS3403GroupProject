@@ -14,9 +14,17 @@
 <section class="calorie-goal-section mb-4">
     <div class="card app-card">
         <div class="card-body">
-            <h2 class="section-title">Active Goal: Calories Burnt</h2>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <h2 class="section-title mb-0">Active Goal: Calories Burnt</h2>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editCalorieGoalModal">
+                    Edit goal
+                </button>
+            </div>
 
-            <p class="text-muted mb-3">
+            <p class="text-muted mb-3 mt-2">
                 Today's Progress: {{ total_calories_burned }} / {{ calorie_burn_goal }} kcal
             </p>
 
@@ -224,6 +232,38 @@
     </div>
 </section>
 
+<!-- Edit calorie goal modal -->
+<div class="modal fade" id="editCalorieGoalModal" tabindex="-1" aria-labelledby="editCalorieGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+
+            <div class="modal-header" style="border-bottom: 1px solid var(--color-border);">
+                <h5 class="modal-title section-title mb-0" id="editCalorieGoalModalLabel">Edit daily calorie burn goal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="edit-calorie-goal-error" class="alert alert-danger" style="display: none;"></div>
+                <div id="edit-calorie-goal-success" class="alert alert-success" style="display: none;"></div>
+
+                <label for="edit-calorie-goal-input" class="form-label">Daily calorie burn goal (kcal)</label>
+                <input type="number" class="form-control" id="edit-calorie-goal-input"
+                       min="1" max="10000" step="1"
+                       value="{{ calorie_burn_goal }}">
+                <p class="text-muted mt-2 mb-0" style="font-size: 0.85rem;">
+                    Allowed range: 1 – 10000 kcal.
+                </p>
+            </div>
+
+            <div class="modal-footer" style="border-top: 1px solid var(--color-border);">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-calorie-goal-btn">Save</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <!-- Weekly calories chart -->
 <section class="weekly-calories-section mb-4">
     <div class="card app-card">
@@ -266,4 +306,55 @@
     </script>
 
     <script src="{{ url_for('static', filename='calories.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const saveBtn = document.getElementById('save-calorie-goal-btn');
+            if (!saveBtn) return;
+
+            const input = document.getElementById('edit-calorie-goal-input');
+            const errorBox = document.getElementById('edit-calorie-goal-error');
+            const successBox = document.getElementById('edit-calorie-goal-success');
+
+            saveBtn.addEventListener('click', function () {
+                errorBox.style.display = 'none';
+                successBox.style.display = 'none';
+
+                const value = input.value.trim();
+                if (!value) {
+                    errorBox.textContent = 'Please enter a daily calorie goal.';
+                    errorBox.style.display = 'block';
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                fetch('/api/calorie-goal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ daily_calorie_goal: value })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        successBox.textContent = 'Goal updated. Refreshing…';
+                        successBox.style.display = 'block';
+                        setTimeout(() => window.location.reload(), 800);
+                    } else {
+                        errorBox.textContent = data.error || 'Could not update goal.';
+                        errorBox.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    errorBox.textContent = 'Network error. Please try again.';
+                    errorBox.style.display = 'block';
+                })
+                .finally(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save';
+                });
+            });
+        });
+    </script>
 {% endblock %}
