@@ -14,7 +14,7 @@ TEST_DATABASE_URI = 'sqlite:///:memory:'
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch):
     """Create a fresh app instance with in-memory database for each test."""
     app = create_app(test_config={
         'TESTING': True,

@@ -5,6 +5,7 @@
 {% block content %}
 
     <form id="start-workout-form" method="POST" action="{{ url_for('main.start_workout') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- Workout Details -->
         <section class="card app-card mb-4">

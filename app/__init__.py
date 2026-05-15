@@ -4,11 +4,13 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_mail import Mail
 from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect
 import os
 
 load_dotenv()
 
 db = SQLAlchemy()
+csrf = CSRFProtect()
 login_manager = LoginManager()
 migrate = Migrate()
 mail = Mail()
@@ -16,6 +18,12 @@ mail = Mail()
 
 def create_app(config_object=None, test_config=None):
     app = Flask(__name__)
+    csrf.init_app(app)
+
+    # FITTRACK-ENV-SECURITY: SECRET_KEY must come from .env or the deployment environment, never source code.
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    if not app.config['SECRET_KEY']:
+        raise RuntimeError('SECRET_KEY environment variable is required.')
 
     app.config.from_mapping(
         SECRET_KEY=os.getenv('SECRET_KEY', 'dev-secret-key'),

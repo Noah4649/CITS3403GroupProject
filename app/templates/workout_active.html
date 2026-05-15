@@ -194,6 +194,7 @@
             <h2 class="section-title">Finish Workout</h2>
             <form id="finish-form" method="POST"
                   action="{{ url_for('main.workout_finish', workout_id=workout.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label for="duration_mins" class="form-label">Duration (minutes)</label>
