@@ -5,8 +5,9 @@ from werkzeug.security import generate_password_hash
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch):
     """Create a fresh app instance with in-memory database for each test."""
+    monkeypatch.setenv('SECRET_KEY', 'test-secret-key')
     app = create_app()
     app.config.update({
         'TESTING': True,

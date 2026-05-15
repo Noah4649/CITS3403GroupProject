@@ -17,7 +17,11 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
 
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+    # FITTRACK-ENV-SECURITY: SECRET_KEY must come from .env or the deployment environment, never source code.
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    if not app.config['SECRET_KEY']:
+        raise RuntimeError('SECRET_KEY environment variable is required.')
+
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///fitness.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
