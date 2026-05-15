@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const incomingRequestsBody = document.getElementById('incoming-requests-body');
     const friendsTableBody = document.getElementById('friends-table-body');
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
     function renderFriendSearchResults(users) {
         if (!friendSearchResultsBody) return;
 
@@ -185,7 +187,8 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
                 }
             })
             .then(response => response.json())
@@ -216,7 +219,8 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
                 }
             })
             .then(response => response.json())
@@ -248,7 +252,8 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
                 }
             })
             .then(response => response.json())
@@ -285,7 +290,8 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
                 }
             })
             .then(response => response.json())

@@ -19,6 +19,7 @@
                 Search for other users and send friend requests.
             </p>
 
+            <!-- GET form — no CSRF token needed -->
             <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2">
                 <div class="col-md-9">
                     <label for="friend-search-input" class="section-title">Search</label>
@@ -60,6 +61,7 @@
                                     <td>{{ user.username }}</td>
                                     <td>
                                         <form class="send-friend-request-form" method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-outline-primary btn-sm">
                                                 Add Friend
                                             </button>
@@ -116,12 +118,14 @@
                                             <td>
                                                 <div class="d-flex justify-content-center gap-2">
                                                     <form class="accept-friend-request-form" method="POST" action="{{ url_for('main.accept_friend_request', friendship_id=request.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                         <button type="submit" class="btn btn-outline-success btn-sm">
                                                             Accept
                                                         </button>
                                                     </form>
 
                                                     <form class="decline-friend-request-form" method="POST" action="{{ url_for('main.decline_friend_request', friendship_id=request.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                         <button type="submit" class="btn btn-outline-secondary btn-sm">
                                                             Decline
                                                         </button>
@@ -214,6 +218,7 @@
                                     <td>{{ friend.username }}</td>
                                     <td>
                                         <form class="remove-friend-form" method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-outline-secondary btn-sm">
                                                 Remove
                                             </button>

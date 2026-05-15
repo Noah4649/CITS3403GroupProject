@@ -21,6 +21,7 @@
 
             <!-- FITTRACK-FEEDBACK-FORM: Sends the selected feedback type and message to the Flask feedback route. -->
             <form method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <!-- FITTRACK-FEEDBACK-FORM: Dropdown used to separate feedback, complaints, and reports in the backend. -->
                 <div class="mb-3">

@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveBtn = document.getElementById('save-profile-btn');
     if (!saveBtn) return;
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
     saveBtn.addEventListener('click', function () {
 
         // Gather form values
@@ -39,7 +41,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Send AJAX request
         fetch('/api/edit-profile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({
                 username, bio, weight, height, goal,
                 daily_calorie_goal: dailyCalorieGoal
