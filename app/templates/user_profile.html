@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }} – FitTrack{% endblock %}
+
+{% block content %}
+
+    <!-- Profile Hero Card -->
+    <section class="card app-card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="avatar-placeholder profile-avatar">
+                    {{ user.username[0].upper() }}
+                </div>
+                <div class="flex-grow-1">
+                    <h1 class="section-title mb-1 profile-username" style="font-size: 1.6rem;">{{ user.username }}</h1>
+                    <p class="mb-0" style="color: var(--color-text-faint); font-size: 0.82rem;">
+                        Member since {{ user.created_at.strftime('%B %Y') }}
+                    </p>
+                    {% if user.bio %}
+                        <p class="mt-2 mb-0" style="font-size: 0.92rem; color: var(--color-text-muted);">{{ user.bio }}</p>
+                    {% else %}
+                        <p class="mt-2 mb-0" style="font-size: 0.88rem; color: var(--color-text-faint); font-style: italic;">No bio set.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Row -->
+    <section class="card app-card mb-4">
+        <div class="card-body">
+            <h2 class="section-title">Activity Summary</h2>
+            <div class="row text-center g-0">
+                <div class="col-4">
+                    <div class="stat-value">{{ workouts | length }}</div>
+                    <div class="stat-label">Public Workouts</div>
+                </div>
+                <div class="col-4 stat-divider">
+                    <div class="stat-value">{{ total_calories_burned | int }}</div>
+                    <div class="stat-label">Calories Burned</div>
+                </div>
+                <div class="col-4 stat-divider">
+                    <div class="stat-value">{{ achievements | length }}</div>
+                    <div class="stat-label">Achievements</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Public Workouts -->
+    <section class="card app-card mb-4">
+        <div class="card-body">
+            <h2 class="section-title">Public Workouts</h2>
+            {% if workouts %}
+                <ul class="list-unstyled mb-0">
+                    {% for workout in workouts[:5] %}
+                        <li class="metric-row">
+                            <span class="label">{{ workout.title }}</span>
+                            <span class="value" style="font-size: 0.82rem; color: var(--color-text-muted);">
+                                {{ workout.date.strftime('%d %b') }}
+                                {% if workout.duration_mins %}&nbsp;&middot;&nbsp;{{ workout.duration_mins }} min{% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">No public workouts yet.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Achievements -->
+    <section class="card app-card">
+        <div class="card-body">
+            <h2 class="section-title">Achievements</h2>
+            {% if achievements %}
+                <div id="achievements-list">
+                    {% for achievement in achievements %}
+                        <article class="achievement-item">
+                            <div class="achievement-icon">
+                                {{ achievement.badge_icon or '🏅' }}
+                            </div>
+                            <div>
+                                <div class="achievement-title">{{ achievement.title }}</div>
+                                {% if achievement.description %}
+                                    <div class="achievement-desc">{{ achievement.description }}</div>
+                                {% endif %}
+                                <div style="font-size: 0.78rem; color: var(--color-text-faint); margin-top: 0.2rem;">
+                                    Earned {{ achievement.earned_at.strftime('%d %b %Y') }}
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No achievements yet.</p>
+            {% endif %}
+        </div>
+    </section>
+
+{% endblock %}
