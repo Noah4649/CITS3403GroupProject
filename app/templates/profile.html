@@ -196,4 +196,13 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='profile.js') }}"></script>
+<script>
+    (function () {
+        if (window.location.hash !== '#editProfileModal') return;
+        const el = document.getElementById('editProfileModal');
+        if (el && window.bootstrap) {
+            new bootstrap.Modal(el).show();
+        }
+    }());
+</script>
 {% endblock %}
