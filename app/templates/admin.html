@@ -4,13 +4,15 @@
 
 {% block content %}
 
+<div class="admin-page">
+
     <section class="mb-4">
         <h1 class="section-title section-title-hd">Admin Panel</h1>
         <p style="color: var(--color-text-muted);">Manage users, reports and feedback.</p>
     </section>
 
     <!-- ─── STATS SUMMARY ─────────────────────────────────── -->
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card app-card text-center">
                 <div class="card-body">
@@ -37,25 +39,39 @@
         </div>
     </div>
 
+    <!-- ─── GLOBAL SEARCH ─────────────────────────────────── -->
+    <section class="mb-4">
+        <label for="admin-filter" class="visually-hidden">Search admin tables</label>
+        <input type="text" id="admin-filter" class="form-control"
+               placeholder="Search users, reports and feedback…"
+               aria-label="Search users, reports and feedback">
+    </section>
+
     <!-- ─── USERS TABLE ───────────────────────────────────── -->
     <section class="card app-card mb-5">
         <div class="card-body">
             <h2 class="section-title">All Users</h2>
             <div class="table-responsive">
-                <table class="table custom-table text-center">
+                <table class="table custom-table text-center js-sortable-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Joined</th>
-                            <th>Admin</th>
+                            <th class="js-sort" data-sort-key="id" data-sort-type="number" role="button">ID</th>
+                            <th class="js-sort" data-sort-key="username" data-sort-type="string" role="button">Username</th>
+                            <th class="js-sort" data-sort-key="email" data-sort-type="string" role="button">Email</th>
+                            <th class="js-sort" data-sort-key="joined" data-sort-type="date" role="button">Joined</th>
+                            <th class="js-sort" data-sort-key="admin" data-sort-type="number" role="button">Admin</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if users %}
                             {% for user in users %}
-                                <tr>
+                                <tr data-row
+                                    data-id="{{ user.id }}"
+                                    data-username="{{ user.username|lower }}"
+                                    data-email="{{ user.email|lower }}"
+                                    data-joined="{{ user.created_at.isoformat() }}"
+                                    data-admin="{{ 1 if user.is_admin else 0 }}"
+                                    data-search="{{ user.id }} {{ user.username|lower }} {{ user.email|lower }}">
                                     <td>{{ user.id }}</td>
                                     <td>{{ user.username }}</td>
                                     <td>{{ user.email }}</td>
@@ -74,6 +90,9 @@
                                 <td colspan="5">No users found.</td>
                             </tr>
                         {% endif %}
+                        <tr class="admin-no-results-row" hidden>
+                            <td colspan="5" class="text-muted">No matching users.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -85,19 +104,24 @@
         <div class="card-body">
             <h2 class="section-title">User Reports</h2>
             <div class="table-responsive">
-                <table class="table custom-table text-center">
+                <table class="table custom-table text-center js-sortable-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>User ID</th>
-                            <th>Message</th>
-                            <th>Date</th>
+                            <th class="js-sort" data-sort-key="id" data-sort-type="number" role="button">ID</th>
+                            <th class="js-sort" data-sort-key="user" data-sort-type="number" role="button">User ID</th>
+                            <th class="js-sort" data-sort-key="message" data-sort-type="string" role="button">Message</th>
+                            <th class="js-sort" data-sort-key="date" data-sort-type="date" role="button">Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if reports %}
                             {% for report in reports %}
-                                <tr>
+                                <tr data-row
+                                    data-id="{{ report.id }}"
+                                    data-user="{{ report.user_id }}"
+                                    data-message="{{ report.message|lower }}"
+                                    data-date="{{ report.created_at.isoformat() }}"
+                                    data-search="{{ report.id }} {{ report.user_id }} {{ report.message|lower }}">
                                     <td>{{ report.id }}</td>
                                     <td>{{ report.user_id }}</td>
                                     <td style="text-align: left;">{{ report.message }}</td>
@@ -109,6 +133,9 @@
                                 <td colspan="4">No reports found.</td>
                             </tr>
                         {% endif %}
+                        <tr class="admin-no-results-row" hidden>
+                            <td colspan="4" class="text-muted">No matching reports.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -118,22 +145,28 @@
     <!-- ─── FEEDBACK TABLE ────────────────────────────────── -->
     <section class="card app-card mb-5">
         <div class="card-body">
-            <h2 class="section-title">Feedback & Complaints</h2>
+            <h2 class="section-title">Feedback &amp; Complaints</h2>
             <div class="table-responsive">
-                <table class="table custom-table text-center">
+                <table class="table custom-table text-center js-sortable-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>User ID</th>
-                            <th>Type</th>
-                            <th>Message</th>
-                            <th>Date</th>
+                            <th class="js-sort" data-sort-key="id" data-sort-type="number" role="button">ID</th>
+                            <th class="js-sort" data-sort-key="user" data-sort-type="number" role="button">User ID</th>
+                            <th class="js-sort" data-sort-key="type" data-sort-type="string" role="button">Type</th>
+                            <th class="js-sort" data-sort-key="message" data-sort-type="string" role="button">Message</th>
+                            <th class="js-sort" data-sort-key="date" data-sort-type="date" role="button">Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if feedbacks %}
                             {% for item in feedbacks %}
-                                <tr>
+                                <tr data-row
+                                    data-id="{{ item.id }}"
+                                    data-user="{{ item.user_id }}"
+                                    data-type="{{ item.type|lower }}"
+                                    data-message="{{ item.message|lower }}"
+                                    data-date="{{ item.created_at.isoformat() }}"
+                                    data-search="{{ item.id }} {{ item.user_id }} {{ item.type|lower }} {{ item.message|lower }}">
                                     <td>{{ item.id }}</td>
                                     <td>{{ item.user_id }}</td>
                                     <td>{{ item.type | capitalize }}</td>
@@ -146,10 +179,36 @@
                                 <td colspan="5">No feedback found.</td>
                             </tr>
                         {% endif %}
+                        <tr class="admin-no-results-row" hidden>
+                            <td colspan="5" class="text-muted">No matching feedback.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </section>
 
+</div>
+
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .js-sort {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    .js-sort::after {
+        content: ' ';
+        opacity: 0.4;
+        margin-left: 0.25rem;
+    }
+    .js-sort.sort-asc::after  { content: '▲'; opacity: 1; }
+    .js-sort.sort-desc::after { content: '▼'; opacity: 1; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}
