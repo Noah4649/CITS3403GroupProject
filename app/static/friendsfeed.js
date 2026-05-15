@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const postContentInput = document.getElementById('post-content');
     const addPostBtn = document.getElementById('add-post-btn');
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
     // Friend feed ownership uses immutable user IDs; usernames are display text only.
     const currentUserId = feedContainer.dataset.currentUserId || '';
     const currentDisplayUsername = feedContainer.dataset.currentDisplayUsername || '';
@@ -62,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const response = await fetch('/friends-feed/posts', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({ content: content })
         });
@@ -106,7 +109,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const response = await fetch('/friends-feed/' + encodeURIComponent(workoutId) + '/comments', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({ text: text })
         });
@@ -125,7 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const response = await fetch('/friends-feed/posts/' + encodeURIComponent(feedPostId) + '/comments', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({ text: text })
         });

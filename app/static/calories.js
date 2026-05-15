@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const addMealForm = document.getElementById('add-meal-form');
     const mealsTableBody = document.getElementById('meals-table-body');
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
     function formatNumber(value) {
         return Number(value || 0).toFixed(1);
     }
@@ -52,7 +54,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/add-meal', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(mealData)
         })
