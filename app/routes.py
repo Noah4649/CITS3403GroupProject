@@ -427,7 +427,6 @@ def api_friend_search():
         results.append({
             'id': user.id,
             'username': user.username,
-            'email': user.email,
             'relationship_status': relationship_status
         })
 
