@@ -94,11 +94,17 @@ def dashboard():
 
     total_calories = sum(m.calories or 0 for m in meals)
 
+    pending_friend_requests = Friendship.query.filter_by(
+        receiver_id=current_user.id,
+        status='pending'
+    ).count()
+
     return render_template(
         'dashboard.html',
         workouts=workouts,
         meals=meals,
-        total_calories=total_calories
+        total_calories=total_calories,
+        pending_friend_requests=pending_friend_requests
     )
 
 

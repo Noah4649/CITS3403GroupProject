@@ -4,6 +4,33 @@
 
 {% block content %}
 
+        <section class="card app-card profile-card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="section-title">My Profile</h2>
+                    <ul class="profile-stats list-unstyled">
+                        <li><strong>Username:</strong> {{ current_user.username }}</li>
+                        <li><strong>Email:</strong> {{ current_user.email }}</li>
+                        <li><strong>Goal:</strong> {{ current_user.goal or 'Not set' }}</li>
+                        <li><strong>Weight:</strong> {{ current_user.weight or 'Not set' }} kg</li>
+                    </ul>
+                    <div class="profile-actions d-flex gap-2 mt-3">
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm">View More</a>
+                        <button class="btn btn-outline-primary btn-sm">Edit Goals</button>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="avatar-placeholder profile-avatar">
+                    {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('main.friends_feed') }}" class="btn btn-friends w-100 mt-3">View Friends' Posts</a>
+            <a href="{{ url_for('main.feedback') }}" class="btn btn-friends w-100 mt-3">Feedback</a>
+        </div>
+    </section>
+
     <section class="card app-card workout-card mb-4">
         <div class="card-body">
             <h2 class="section-title">Today's Training Sessions</h2>
@@ -18,7 +45,6 @@
                     <p class="text-muted">No workouts logged today.</p>
                 {% endif %}
             </div>
-            <button class="btn btn-outline-secondary btn-sm btn-edit mt-3">Edit</button>
         </div>
     </section>
 
@@ -43,36 +69,30 @@
                         <span>Total:</span>
                         <span class="cal-total-val fw-bold">{{ total_calories }} kcal</span>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm btn-edit mt-3">Edit</button>
                 </div>
             </section>
         </div>
-        <div class="col-md-6" id="second-col-placeholder"></div>
-    </div>
+        <div class="col-md-6">
+            <section class="card app-card h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <h2 class="section-title">Friend Requests</h2>
 
-    <section class="card app-card profile-card">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="section-title">My Profile</h2>
-                    <ul class="profile-stats list-unstyled">
-                        <li><strong>Username:</strong> {{ current_user.username }}</li>
-                        <li><strong>Email:</strong> {{ current_user.email }}</li>
-                        <li><strong>Goal:</strong> {{ current_user.goal or 'Not set' }}</li>
-                        <li><strong>Weight:</strong> {{ current_user.weight or 'Not set' }} kg</li>
-                    </ul>
-                    <div class="profile-actions d-flex gap-2 mt-3">
-                        <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm">View More</a>
-                        <button class="btn btn-outline-primary btn-sm">Edit Goals</button>
+                        {% if pending_friend_requests > 0 %}
+                            <p class="mb-3">
+                                You have {{ pending_friend_requests }} friend request{% if pending_friend_requests != 1 %}s{% endif %}.
+                            </p>
+                        {% else %}
+                            <p class="text-muted mb-3">You have no pending friend requests.</p>
+                        {% endif %}
                     </div>
+
+                    <a href="{{ url_for('main.friends') }}" class="btn btn-primary btn-sm mt-3">
+                        View Friends
+                    </a>
                 </div>
-                <div class="col-auto">
-                    <div class="avatar-placeholder" id="user-avatar" aria-label="Profile picture"></div>
-                </div>
-            </div>
-            <a href="{{ url_for('main.friends_feed') }}" class="btn btn-friends w-100 mt-3">View Friends' Posts</a>
-            <a href="{{ url_for('main.feedback') }}" class="btn btn-friends w-100 mt-3">Feedback</a>
+            </section>
         </div>
-    </section>
+    </div>
 
 {% endblock %}
