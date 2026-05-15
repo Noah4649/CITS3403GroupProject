@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr class="empty-row">
                     <td>-</td>
                     <td>No users found.</td>
-                    <td>-</td>
                 </tr>
             `;
             return;
@@ -55,7 +54,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return `
                 <tr>
                     <td>${user.username}</td>
-                    <td>${user.email}</td>
                     <td>${actionHtml}</td>
                 </tr>
             `;
@@ -120,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         row.innerHTML = `
             <td>${friend.username}</td>
-            <td>${friend.email}</td>
             <td>
                 <form class="remove-friend-form" method="POST" action="/friends/remove/${friend.id}">
                     <button type="submit" class="btn btn-outline-secondary btn-sm">
@@ -151,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         <tr class="empty-row">
                             <td>-</td>
                             <td>Start typing to search.</td>
-                            <td>-</td>
                         </tr>
                     `;
                     return;
@@ -305,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     row.remove();
                 }
 
-                addEmptyRowIfNeeded(friendsTableBody, 3, 'You have not added any friends yet.');
+                addEmptyRowIfNeeded(friendsTableBody, 2, 'You have not added any friends yet.');
             })
             .catch(error => {
                 console.error('Remove friend error:', error);

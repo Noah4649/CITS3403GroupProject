@@ -27,7 +27,7 @@
                         name="q"
                         id="friend-search-input"
                         class="form-control"
-                        placeholder="Search by username or email"
+                        placeholder="Search by username"
                         value="{{ search_query or '' }}"
                     >
                 </div>
@@ -42,15 +42,13 @@
             <div class="table-responsive leaderboard-table-scroll mt-4">
                 <table class="table text-center custom-table mb-0" style="table-layout: fixed;">
                     <colgroup>
-                        <col style="width: 25%;">
                         <col style="width: 50%;">
-                        <col style="width: 25%;">
+                        <col style="width: 50%;">
                     </colgroup>
 
                     <thead>
                         <tr>
                             <th>Username</th>
-                            <th>Email</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -60,7 +58,6 @@
                             {% for user in search_results %}
                                 <tr>
                                     <td>{{ user.username }}</td>
-                                    <td>{{ user.email }}</td>
                                     <td>
                                         <form class="send-friend-request-form" method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
                                             <button type="submit" class="btn btn-outline-primary btn-sm">
@@ -74,13 +71,11 @@
                             <tr class="empty-row">
                                 <td>-</td>
                                 <td>No users found.</td>
-                                <td>-</td>
                             </tr>
                         {% else %}
                             <tr class="empty-row">
                                 <td>-</td>
                                 <td>Start typing to search.</td>
-                                <td>-</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -202,14 +197,12 @@
             <div class="table-responsive leaderboard-table-scroll">
                 <table class="table text-center custom-table mb-0">
                     <colgroup>
-                        <col style="width: 25%;">
                         <col style="width: 50%;">
-                        <col style="width: 25%;">
+                        <col style="width: 50%;">
                     </colgroup>
                     <thead>
                         <tr>
                             <th>Username</th>
-                            <th>Email</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -219,7 +212,6 @@
                             {% for friend in friends %}
                                 <tr id="friend-row-{{ friend.id }}">
                                     <td>{{ friend.username }}</td>
-                                    <td>{{ friend.email }}</td>
                                     <td>
                                         <form class="remove-friend-form" method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
                                             <button type="submit" class="btn btn-outline-secondary btn-sm">
@@ -231,7 +223,7 @@
                             {% endfor %}
                         {% else %}
                             <tr class="empty-row">
-                                <td colspan="3">You have not added any friends yet.</td>
+                                <td colspan="2">You have not added any friends yet.</td>
                             </tr>
                         {% endif %}
                     </tbody>
