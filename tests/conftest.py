@@ -4,26 +4,29 @@ from app.models import User
 from werkzeug.security import generate_password_hash
 
 
+TEST_DATABASE_URI = 'sqlite:///:memory:'
+
+
 @pytest.fixture
 def app():
     """Create a fresh app instance with in-memory database for each test."""
-    # FITTRACK-TESTING-NOTE: These fixtures are intended to run against
-    # sqlite:///:memory:, but create_app() currently applies the database URI
-    # before this update. The next testing fix moves config injection earlier.
-    app = create_app()
-    app.config.update({
+    app = create_app(test_config={
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
         'WTF_CSRF_ENABLED': False,
         'SECRET_KEY': 'test-secret-key'
     })
 
     with app.app_context():
+        assert app.config['SQLALCHEMY_DATABASE_URI'] == TEST_DATABASE_URI
+        assert str(db.engine.url) == TEST_DATABASE_URI
         db.create_all()
         _seed_test_data()
-        yield app
-        db.session.remove()
-        db.drop_all()
+        try:
+            yield app
+        finally:
+            db.session.remove()
+            db.drop_all()
 
 
 def _seed_test_data():
