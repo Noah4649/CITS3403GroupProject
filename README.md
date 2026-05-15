@@ -21,7 +21,7 @@ Built for **CITS3403 — Agile Web Development** at UWA.
 
 ## Tech stack
 
-- **Backend:** Flask 3, Flask-SQLAlchemy, Flask-Login, Flask-Migrate (Alembic), Flask-Mail
+- **Backend:** Flask 3, Flask-SQLAlchemy, Flask-Login, Flask-Migrate (Alembic), Flask-Mail, Flask-WTF
 - **Database:** SQLite by default (configurable via `DATABASE_URL`)
 - **Frontend:** Jinja2 templates, Bootstrap 5, vanilla JS, Chart.js for charts
 - **Tests:** pytest
