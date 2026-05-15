@@ -128,6 +128,7 @@ def browser():
     from selenium.webdriver.chrome.options import Options as ChromeOptions
 
     options = ChromeOptions()
+    options.page_load_strategy = 'eager'
     chrome_binary = _chrome_binary_path()
     if chrome_binary:
         options.binary_location = chrome_binary
@@ -142,6 +143,7 @@ def browser():
 
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(2)
+    driver.set_page_load_timeout(15)
 
     try:
         yield driver
