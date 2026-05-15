@@ -181,6 +181,14 @@
                            placeholder="e.g. Lose 5kg, Run a marathon"
                            value="{{ current_user.goal or '' }}">
                 </div>
+
+                <div class="mb-3">
+                    <label for="edit-daily-calorie-goal" class="form-label">Daily calorie burn goal (kcal)</label>
+                    <input type="number" class="form-control" id="edit-daily-calorie-goal"
+                           min="1" max="10000" step="1"
+                           placeholder="600"
+                           value="{{ daily_calorie_goal }}">
+                </div>
             </div>
 
             <div class="modal-footer" style="border-top: 1px solid var(--color-border);">

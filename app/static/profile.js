@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const weight = document.getElementById('edit-weight').value.trim();
         const height = document.getElementById('edit-height').value.trim();
         const goal = document.getElementById('edit-goal').value.trim();
+        const dailyCalorieGoal = document.getElementById('edit-daily-calorie-goal').value.trim();
 
         // Clear previous messages
         const errorBox = document.getElementById('edit-profile-error');
@@ -39,7 +40,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/edit-profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, bio, weight, height, goal })
+            body: JSON.stringify({
+                username, bio, weight, height, goal,
+                daily_calorie_goal: dailyCalorieGoal
+            })
         })
         .then(response => response.json())
         .then(data => {
