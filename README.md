@@ -24,7 +24,7 @@ Built for **CITS3403 — Agile Web Development** at UWA.
 - **Backend:** Flask 3, Flask-SQLAlchemy, Flask-Login, Flask-Migrate (Alembic), Flask-Mail
 - **Database:** SQLite by default (configurable via `DATABASE_URL`)
 - **Frontend:** Jinja2 templates, Bootstrap 5, vanilla JS, Chart.js for charts
-- **Tests:** pytest
+- **Tests:** pytest and Selenium WebDriver
 
 ---
 
@@ -86,10 +86,18 @@ Visit <http://127.0.0.1:5000>. Debug mode is on by default — code changes hot-
 ## Running tests
 
 ```bash
-pytest
+python -m pytest -q
 ```
 
-Tests live in [`tests/`](tests/) and cover authentication, models, and route behavior.
+Tests live in [`tests/`](tests/) and cover authentication, models, route behavior, and browser flows.
+
+Selenium tests run against a live local Flask server and use an isolated test database:
+
+```bash
+python -m pytest tests/test_selenium.py -q
+```
+
+Selenium uses Chrome in headless mode by default. Install Chrome before running browser tests. To watch the browser, run with `SELENIUM_HEADLESS=0`.
 
 ---
 
