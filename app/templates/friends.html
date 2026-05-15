@@ -4,217 +4,140 @@
 
 {% block content %}
 
-<div class="friends-page">
+<!-- Friends header -->
+<section class="feed-header text-center mb-4">
+    <h1 class="section-title">Friends</h1>
+    <p class="feed-subtitle">Manage your friends and friend requests.</p>
+</section>
 
-    <!-- Friends header -->
-    <section class="feed-header text-center mb-4">
-        <h1 class="section-title">Friends</h1>
-        <p class="feed-subtitle">Manage your friends and friend requests.</p>
-    </section>
+<!-- Find users -->
+<section class="friends-search-section mb-4">
+    <div class="card app-card">
+        <div class="card-body">
+            <h2 class="section-title text-center">Find Friends</h2>
+            <p class="text-muted text-center mb-3">
+                Search for other users and send friend requests.
+            </p>
 
-    <div class="container">
+            <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2">
+                <div class="col-md-9">
+                    <label for="friend-search-input" class="form-label">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        id="friend-search-input"
+                        class="form-control"
+                        placeholder="Search by username or email"
+                        value="{{ search_query or '' }}"
+                    >
+                </div>
 
-        <!-- Find users -->
-        <section class="friends-search-section mb-4">
-            <div class="card app-card">
-                <div class="card-body">
-                    <h2 class="section-title-lg">Find Friends</h2>
-                    <p class="text-muted mb-3">Search for other users and send friend requests.</p>
+                <div class="col-md-3 d-grid align-self-end">
+                    <button type="submit" class="btn btn-primary">
+                        Search
+                    </button>
+                </div>
+            </form>
 
-                    <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2">
-                        <div class="col-md-9">
-                            <label for="friend-search-input" class="section-title">Search</label>
-                            <input
-                                type="text"
-                                name="q"
-                                id="friend-search-input"
-                                class="form-control"
-                                placeholder="Search by username or email"
-                                value="{{ search_query or '' }}"
-                            >
-                        </div>
+            <div class="table-responsive leaderboard-table-scroll mt-4">
+                <table class="table text-center custom-table mb-0" style="table-layout: fixed;">
+                    <colgroup>
+                        <col style="width: 25%;">
+                        <col style="width: 50%;">
+                        <col style="width: 25%;">
+                    </colgroup>
 
-                        <div class="col-md-3 d-grid align-self-end">
-                            <button type="submit" class="btn btn-primary">
-                                Search
-                            </button>
-                        </div>
-                    </form>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-                    <div class="table-responsive leaderboard-table-scroll mt-4">
-                        <table class="table text-center custom-table mb-0" style="table-layout: fixed;">
-                            <colgroup>
-                                <col style="width: 25%;">
-                                <col style="width: 50%;">
-                                <col style="width: 25%;">
-                            </colgroup>
-                            <thead>
+                    <tbody id="friend-search-results-body">
+                        {% if search_results %}
+                            {% for user in search_results %}
                                 <tr>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Action</th>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <form class="send-friend-request-form" method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                Add Friend
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody id="friend-search-results-body">
-                                {% if search_results %}
-                                    {% for user in search_results %}
-                                        <tr>
-                                            <td>{{ user.username }}</td>
-                                            <td>{{ user.email }}</td>
-                                            <td>
-                                                <form class="send-friend-request-form" method="POST" action="{{ url_for('main.send_friend_request', user_id=user.id) }}">
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                        Add Friend
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                {% elif search_query %}
-                                    <tr class="empty-row">
-                                        <td>-</td>
-                                        <td>No users found.</td>
-                                        <td>-</td>
-                                    </tr>
-                                {% else %}
-                                    <tr class="empty-row">
-                                        <td>-</td>
-                                        <td>Start typing to search.</td>
-                                        <td>-</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            {% endfor %}
+                        {% elif search_query %}
+                            <tr class="empty-row">
+                                <td>-</td>
+                                <td>No users found.</td>
+                                <td>-</td>
+                            </tr>
+                        {% else %}
+                            <tr class="empty-row">
+                                <td>-</td>
+                                <td>Start typing to search.</td>
+                                <td>-</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
             </div>
-        </section>
 
-        <!-- Friend request sections -->
-        <section class="mb-3">
-            <div class="row g-3">
+        </div>
+    </div>
+</section>
 
-                <!-- Incoming requests -->
-                <div class="col-md-6">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Incoming Requests</h3>
+<!-- Friend request sections -->
+<section class="friend-requests-section mb-4">
+    <div class="row g-4">
 
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Username</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="incoming-requests-body">
-                                        {% if incoming_requests %}
-                                            {% for request in incoming_requests %}
-                                                <tr id="incoming-request-row-{{ request.id }}">
-                                                    <td>{{ request.requester.username }}</td>
-                                                    <td>
-                                                        <div class="d-flex justify-content-center gap-2">
-                                                            <form class="accept-friend-request-form" method="POST" action="{{ url_for('main.accept_friend_request', friendship_id=request.id) }}">
-                                                                <button type="submit" class="btn btn-outline-success btn-sm">
-                                                                    Accept
-                                                                </button>
-                                                            </form>
-
-                                                            <form class="decline-friend-request-form" method="POST" action="{{ url_for('main.decline_friend_request', friendship_id=request.id) }}">
-                                                                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                                    Decline
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="empty-row">
-                                                <td colspan="2">No incoming friend requests.</td>
-                                            </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sent requests -->
-                <div class="col-md-6">
-                    <div class="card app-card h-100">
-                        <div class="card-body">
-                            <h3 class="section-title section-title-lg text-center">Sent Requests</h3>
-
-                            <div class="table-responsive leaderboard-table-scroll">
-                                <table class="table text-center custom-table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Username</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="sent-requests-body">
-                                        {% if sent_requests %}
-                                            {% for request in sent_requests %}
-                                                <tr id="sent-request-row-{{ request.id }}">
-                                                    <td>{{ request.receiver.username }}</td>
-                                                    <td>{{ request.status|capitalize }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr class="empty-row">
-                                                <td colspan="2">No sent friend requests.</td>
-                                            </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Current friends -->
-        <section class="mb-3">
-            <div class="card app-card">
+        <!-- Incoming requests -->
+        <div class="col-md-6">
+            <div class="card app-card h-100">
                 <div class="card-body">
-                    <h3 class="section-title section-title-lg text-center">Your Friends</h3>
-                    <p class="section-title text-center">People you are currently connected with.</p>
+                    <h2 class="section-title text-center">Incoming Requests</h2>
+                    <p class="text-muted text-center mb-3">
+                        Friend requests waiting for your response.
+                    </p>
 
                     <div class="table-responsive leaderboard-table-scroll">
                         <table class="table text-center custom-table mb-0">
                             <thead>
                                 <tr>
                                     <th>Username</th>
-                                    <th>Email</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="friends-table-body">
-                                {% if friends %}
-                                    {% for friend in friends %}
-                                        <tr id="friend-row-{{ friend.id }}">
-                                            <td>{{ friend.username }}</td>
-                                            <td>{{ friend.email }}</td>
+
+                            <tbody id="incoming-requests-body">
+                                {% if incoming_requests %}
+                                    {% for request in incoming_requests %}
+                                        <tr id="incoming-request-row-{{ request.id }}">
+                                            <td>{{ request.requester.username }}</td>
                                             <td>
-                                                <form class="remove-friend-form" method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
-                                                    <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                        Remove
-                                                    </button>
-                                                </form>
+                                                <div class="d-flex justify-content-center gap-2">
+                                                    <form class="accept-friend-request-form" method="POST" action="{{ url_for('main.accept_friend_request', friendship_id=request.id) }}">
+                                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                                            Accept
+                                                        </button>
+                                                    </form>
+
+                                                    <form class="decline-friend-request-form" method="POST" action="{{ url_for('main.decline_friend_request', friendship_id=request.id) }}">
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                            Decline
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr class="empty-row">
-                                        <td colspan="3">You have not added any friends yet.</td>
+                                        <td colspan="2">No incoming friend requests.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
@@ -223,11 +146,96 @@
 
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Sent requests -->
+        <div class="col-md-6">
+            <div class="card app-card h-100">
+                <div class="card-body">
+                    <h2 class="section-title text-center">Sent Requests</h2>
+                    <p class="text-muted text-center mb-3">
+                        Requests you have sent to other users.
+                    </p>
+
+                    <div class="table-responsive leaderboard-table-scroll">
+                        <table class="table text-center custom-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="sent-requests-body">
+                                {% if sent_requests %}
+                                    {% for request in sent_requests %}
+                                        <tr id="sent-request-row-{{ request.id }}">
+                                            <td>{{ request.receiver.username }}</td>
+                                            <td>{{ request.status|capitalize }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr class="empty-row">
+                                        <td colspan="2">No sent friend requests.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
 
     </div>
+</section>
 
-</div>
+<!-- Current friends -->
+<section class="friends-list-section mb-4">
+    <div class="card app-card">
+        <div class="card-body">
+            <h2 class="section-title text-center">Your Friends</h2>
+            <p class="text-muted text-center mb-3">
+                People you are currently connected with.
+            </p>
+
+            <div class="table-responsive leaderboard-table-scroll">
+                <table class="table text-center custom-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="friends-table-body">
+                        {% if friends %}
+                            {% for friend in friends %}
+                                <tr id="friend-row-{{ friend.id }}">
+                                    <td>{{ friend.username }}</td>
+                                    <td>{{ friend.email }}</td>
+                                    <td>
+                                        <form class="remove-friend-form" method="POST" action="{{ url_for('main.remove_friend', user_id=friend.id) }}">
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="empty-row">
+                                <td colspan="3">You have not added any friends yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</section>
 
 {% endblock %}
 
