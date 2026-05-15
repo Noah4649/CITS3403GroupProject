@@ -4,6 +4,33 @@
 
 {% block content %}
 
+        <section class="card app-card profile-card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="section-title">My Profile</h2>
+                    <ul class="profile-stats list-unstyled">
+                        <li><strong>Username:</strong> {{ current_user.username }}</li>
+                        <li><strong>Email:</strong> {{ current_user.email }}</li>
+                        <li><strong>Goal:</strong> {{ current_user.goal or 'Not set' }}</li>
+                        <li><strong>Weight:</strong> {{ current_user.weight or 'Not set' }} kg</li>
+                    </ul>
+                    <div class="profile-actions d-flex gap-2 mt-3">
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm">View More</a>
+                        <button class="btn btn-outline-primary btn-sm">Edit Goals</button>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="avatar-placeholder profile-avatar">
+                    {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('main.friends_feed') }}" class="btn btn-friends w-100 mt-3">View Friends' Posts</a>
+            <a href="{{ url_for('main.feedback') }}" class="btn btn-friends w-100 mt-3">Feedback</a>
+        </div>
+    </section>
+
     <section class="card app-card workout-card mb-4">
         <div class="card-body">
             <h2 class="section-title">Today's Training Sessions</h2>
@@ -67,32 +94,5 @@
             </section>
         </div>
     </div>
-
-    <section class="card app-card profile-card">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="section-title">My Profile</h2>
-                    <ul class="profile-stats list-unstyled">
-                        <li><strong>Username:</strong> {{ current_user.username }}</li>
-                        <li><strong>Email:</strong> {{ current_user.email }}</li>
-                        <li><strong>Goal:</strong> {{ current_user.goal or 'Not set' }}</li>
-                        <li><strong>Weight:</strong> {{ current_user.weight or 'Not set' }} kg</li>
-                    </ul>
-                    <div class="profile-actions d-flex gap-2 mt-3">
-                        <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm">View More</a>
-                        <button class="btn btn-outline-primary btn-sm">Edit Goals</button>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="avatar-placeholder profile-avatar">
-                    {{ current_user.username[0].upper() }}
-                    </div>
-                </div>
-            </div>
-            <a href="{{ url_for('main.friends_feed') }}" class="btn btn-friends w-100 mt-3">View Friends' Posts</a>
-            <a href="{{ url_for('main.feedback') }}" class="btn btn-friends w-100 mt-3">Feedback</a>
-        </div>
-    </section>
 
 {% endblock %}
