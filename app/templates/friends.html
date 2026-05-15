@@ -7,25 +7,24 @@
 <div class="friends-page">
 
     <!-- Friends header -->
-    <section class="leaderboard-header">
-        <div class="container-fluid">
-            <h1 class="section-title section-title-hd">Friends</h1>
-            <p class="section-title">Manage your friends and friend requests.</p>
-        </div>
+    <section class="feed-header text-center mb-4">
+        <h1 class="section-title">Friends</h1>
+        <p class="feed-subtitle">Manage your friends and friend requests.</p>
     </section>
 
     <div class="container">
 
         <!-- Find users -->
-        <section class="mb-3">
+        <section class="friends-search-section mb-4">
             <div class="card app-card">
                 <div class="card-body">
-                    <h3 class="section-title section-title-lg text-center">Find Friends</h3>
-                    <p class="section-title text-center">Search for other users and send friend requests.</p>
+                    <h2 class="section-title-lg">Find Friends</h2>
+                    <p class="text-muted mb-3">Search for other users and send friend requests.</p>
 
-                    <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2 justify-content-center">
-                        <div class="col-md-8">
-                            <input 
+                    <form id="friend-search-form" method="GET" action="{{ url_for('main.friends') }}" class="row g-2">
+                        <div class="col-md-9">
+                            <label for="friend-search-input" class="section-title">Search</label>
+                            <input
                                 type="text"
                                 name="q"
                                 id="friend-search-input"
@@ -35,14 +34,14 @@
                             >
                         </div>
 
-                        <div class="col-md-2 d-grid">
+                        <div class="col-md-3 d-grid align-self-end">
                             <button type="submit" class="btn btn-primary">
                                 Search
                             </button>
                         </div>
                     </form>
 
-                    <div class="table-responsive leaderboard-table-scroll mt-3">
+                    <div class="table-responsive leaderboard-table-scroll mt-4">
                         <table class="table text-center custom-table mb-0" style="table-layout: fixed;">
                             <colgroup>
                                 <col style="width: 25%;">
@@ -87,7 +86,6 @@
                             </tbody>
                         </table>
                     </div>
-
                 </div>
             </div>
         </section>
