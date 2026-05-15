@@ -173,13 +173,15 @@ function setActiveNavLink() {
         var linkPath = $(this).attr('href');
         if (!linkPath) return;
 
-        if (linkPath === '/' && currentPath === '/') {
-            $(this).addClass('active');
-        } else if (linkPath !== '/' && currentPath.startsWith(linkPath)) {
+        // Remove any active class first so template/JS do not double-highlight
+        $(this).removeClass('active');
+
+        if (linkPath === currentPath) {
             $(this).addClass('active');
         }
     });
 }
+
 
 
 /* ============================================================
