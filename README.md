@@ -6,6 +6,15 @@ Built for **CITS3403 — Agile Web Development** at UWA.
 
 ---
 
+## Group Members
+
+|   Name       | StudentID | Github Username |
+| ------------ | --------  | --------------- |
+| Nour Zahrawi | 24106807  |    Noah4649     |
+| Daniel Cosh  | 23362209  |   DanCosh701    |
+| Jayden Walsh | 24464262  |   jayjay1773    |
+| Krish Jasani | 23910368  |  KrishJasani09  |
+
 ## Features
 
 - **Authentication** — signup, login, password reset via email
@@ -21,7 +30,7 @@ Built for **CITS3403 — Agile Web Development** at UWA.
 
 ## Tech stack
 
-- **Backend:** Flask 3, Flask-SQLAlchemy, Flask-Login, Flask-Migrate (Alembic), Flask-Mail
+- **Backend:** Flask 3, Flask-SQLAlchemy, Flask-Login, Flask-Migrate (Alembic), Flask-Mail, Flask-WTF
 - **Database:** SQLite by default (configurable via `DATABASE_URL`)
 - **Frontend:** Jinja2 templates, Bootstrap 5, vanilla JS, Chart.js for charts
 - **Tests:** pytest and Selenium WebDriver
