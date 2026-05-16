@@ -1,27 +1,38 @@
 import pytest
+import os
+import socket
+import threading
+from pathlib import Path
 from app import create_app, db
 from app.models import User
+from sqlalchemy.pool import StaticPool
 from werkzeug.security import generate_password_hash
+from werkzeug.serving import make_server
+
+
+TEST_DATABASE_URI = 'sqlite:///:memory:'
 
 
 @pytest.fixture
 def app(monkeypatch):
     """Create a fresh app instance with in-memory database for each test."""
-    monkeypatch.setenv('SECRET_KEY', 'test-secret-key')
-    app = create_app()
-    app.config.update({
+    app = create_app(test_config={
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
         'WTF_CSRF_ENABLED': False,
         'SECRET_KEY': 'test-secret-key'
     })
 
     with app.app_context():
+        assert app.config['SQLALCHEMY_DATABASE_URI'] == TEST_DATABASE_URI
+        assert str(db.engine.url) == TEST_DATABASE_URI
         db.create_all()
         _seed_test_data()
-        yield app
-        db.session.remove()
-        db.drop_all()
+        try:
+            yield app
+        finally:
+            db.session.remove()
+            db.drop_all()
 
 
 def _seed_test_data():
@@ -66,3 +77,117 @@ def admin_client(client):
         'password': 'password123'
     }, follow_redirects=True)
     return client
+
+
+@pytest.fixture
+def selenium_app():
+    """Flask app configured for a live Selenium server and isolated database."""
+    app = create_app(test_config={
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
+        'SQLALCHEMY_ENGINE_OPTIONS': {
+            'connect_args': {'check_same_thread': False},
+            'poolclass': StaticPool,
+        },
+        'WTF_CSRF_ENABLED': False,
+        'SECRET_KEY': 'selenium-test-secret-key',
+    })
+
+    with app.app_context():
+        assert str(db.engine.url) == TEST_DATABASE_URI
+        db.create_all()
+        _seed_test_data()
+
+    try:
+        yield app
+    finally:
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
+
+
+@pytest.fixture
+def live_server(selenium_app):
+    """Run the Flask app on a real local port for Selenium WebDriver tests."""
+    port = _get_free_port()
+    server = make_server('127.0.0.1', port, selenium_app, threaded=True)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    try:
+        yield f'http://127.0.0.1:{port}'
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+@pytest.fixture
+def browser():
+    """Open a headless Chrome WebDriver and tear it down after the test."""
+    pytest.importorskip('selenium')
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
+
+    options = ChromeOptions()
+    options.page_load_strategy = 'eager'
+    chrome_binary = _chrome_binary_path()
+    if chrome_binary:
+        options.binary_location = chrome_binary
+
+    if os.getenv('SELENIUM_HEADLESS', '1').lower() not in {'0', 'false', 'no'}:
+        options.add_argument('--headless=new')
+
+    options.add_argument('--window-size=1280,900')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver_path = _chromedriver_path()
+    service = ChromeService(executable_path=driver_path) if driver_path else None
+    driver = webdriver.Chrome(options=options, service=service)
+    driver.implicitly_wait(2)
+    driver.set_page_load_timeout(15)
+
+    try:
+        yield driver
+    finally:
+        driver.quit()
+
+
+def _get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
+
+
+def _chrome_binary_path():
+    configured = os.getenv('CHROME_BINARY')
+    if configured and os.path.exists(configured):
+        return configured
+
+    for path in (
+        r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+        r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+    ):
+        if os.path.exists(path):
+            return path
+
+    return None
+
+
+def _chromedriver_path():
+    configured = os.getenv('CHROMEDRIVER')
+    if configured and os.path.exists(configured):
+        return configured
+
+    selenium_cache = Path.home() / '.cache' / 'selenium' / 'chromedriver'
+    cached_drivers = sorted(
+        selenium_cache.glob('**/chromedriver.exe'),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True
+    )
+    if cached_drivers:
+        return str(cached_drivers[0])
+
+    return None

@@ -1,17 +1,21 @@
-# FITTRACK-ENV-SECURITY: Keep local secrets and machine-specific config out of Git.
-.env
-.env.*
-!.env.example
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
 
-# Local databases
+# Virtual environments
+.venv/
+venv/
+
+# Local configuration and SQLite databases
+.env
+instance/
 *.db
 *.sqlite
 *.sqlite3
-instance/
 
-# Python caches and virtual environments
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
-venv/
+# Local browser driver artifacts
+chromedriver*
+geckodriver*
+msedgedriver*
+.selenium/

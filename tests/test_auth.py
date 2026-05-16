@@ -178,6 +178,8 @@ class TestPasswordChange:
 
         response = logged_in_client.get('/dashboard')
         assert response.status_code == 200
+        assert b'My Profile' in response.data
+        assert b'testuser' in response.data
 
     def test_old_password_rejected_after_change(self, client):
         """After a password change, logging in with the old password must fail."""

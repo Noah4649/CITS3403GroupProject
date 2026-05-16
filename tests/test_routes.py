@@ -15,21 +15,31 @@ class TestPublicRoutes:
         """GET /login should render the login page."""
         response = client.get('/login')
         assert response.status_code == 200
+        assert b'Login' in response.data
+        assert b'Email' in response.data
+        assert b'Forgot password?' in response.data
 
     def test_signup_page_get(self, client):
         """GET /signup should render the signup page."""
         response = client.get('/signup')
         assert response.status_code == 200
+        assert b'Sign Up' in response.data
+        assert b'Create Account' in response.data
+        assert b'Retype Password' in response.data
 
     def test_password_reset_page_get(self, client):
         """GET /password-reset should render the password reset page."""
         response = client.get('/password-reset')
         assert response.status_code == 200
+        assert b'Reset Password' in response.data
+        assert b'Email' in response.data
 
     def test_terms_page_get(self, client):
         """GET /terms should be accessible to everyone."""
         response = client.get('/terms')
         assert response.status_code == 200
+        assert b'Terms & Conditions' in response.data
+        assert b'Health Disclaimer' in response.data
 
 
 class TestAuthRoutes:
@@ -62,7 +72,7 @@ class TestAuthRoutes:
         assert response.status_code == 200
         assert b'Invalid email or password' in response.data
 
-    def test_signup_new_user(self, client):
+    def test_signup_new_user(self, app, client):
         """POST /signup with new credentials should create user and redirect."""
         response = client.post('/signup', data={
             'username': 'newuser',
@@ -71,6 +81,13 @@ class TestAuthRoutes:
         }, follow_redirects=True)
         assert response.status_code == 200
         assert b'Dashboard' in response.data
+        assert b'newuser' in response.data
+
+        with app.app_context():
+            created_user = User.query.filter_by(email='newuser@test.com').first()
+            assert created_user is not None
+            assert created_user.username == 'newuser'
+            assert created_user.is_admin is False
 
     def test_signup_duplicate_email(self, client):
         """POST /signup with existing email should show error."""
@@ -86,6 +103,7 @@ class TestAuthRoutes:
         """GET /logout should redirect to login page."""
         response = logged_in_client.get('/logout', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
 
@@ -96,67 +114,90 @@ class TestProtectedRoutes:
         """GET /dashboard without login should redirect to login."""
         response = client.get('/dashboard', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_dashboard_logged_in(self, logged_in_client):
         """GET /dashboard while logged in should render dashboard."""
         response = logged_in_client.get('/dashboard')
         assert response.status_code == 200
+        assert b'My Profile' in response.data
+        assert b'testuser' in response.data
+        assert b'test@test.com' in response.data
 
     def test_profile_logged_out_redirects(self, client):
         """GET /profile without login should redirect to login."""
         response = client.get('/profile', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_profile_logged_in(self, logged_in_client):
         """GET /profile while logged in should render profile page."""
         response = logged_in_client.get('/profile')
         assert response.status_code == 200
+        assert b'testuser' in response.data
+        assert b'Activity Summary' in response.data
+        assert b'Achievements' in response.data
 
     def test_history_logged_out_redirects(self, client):
         """GET /history without login should redirect to login."""
         response = client.get('/history', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_history_logged_in(self, logged_in_client):
         """GET /history while logged in should render history page."""
         response = logged_in_client.get('/history')
         assert response.status_code == 200
+        assert b'History' in response.data
+        assert b'Your Workouts' in response.data
 
     def test_calories_logged_out_redirects(self, client):
         """GET /calories without login should redirect to login."""
         response = client.get('/calories', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_calories_logged_in(self, logged_in_client):
         """GET /calories while logged in should render calories page."""
         response = logged_in_client.get('/calories')
         assert response.status_code == 200
+        assert b'Calories' in response.data
+        assert b'Calories Consumed' in response.data
+        assert b"Today's Meals" in response.data
 
     def test_leaderboard_logged_out_redirects(self, client):
         """GET /leaderboard without login should redirect to login."""
         response = client.get('/leaderboard', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_leaderboard_logged_in(self, logged_in_client):
         """GET /leaderboard while logged in should render leaderboard page."""
         response = logged_in_client.get('/leaderboard')
         assert response.status_code == 200
+        assert b'Leaderboard' in response.data
+        assert b'Overall Leaderboard' in response.data
+        assert b'Compare by metric' in response.data
 
     def test_friends_feed_logged_out_redirects(self, client):
         """GET /friends-feed without login should redirect to login."""
         response = client.get('/friends-feed', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_friends_feed_logged_in(self, logged_in_client):
         """GET /friends-feed while logged in should render friends feed."""
         response = logged_in_client.get('/friends-feed')
         assert response.status_code == 200
+        assert b'Friend Feed' in response.data
+        assert b'Create a Post' in response.data
+        assert b'data-current-user-id=' in response.data
 
     def test_friends_feed_uses_user_ids_for_ownership(self, app, logged_in_client):
         """Friend feed should render immutable user IDs for ownership checks."""
@@ -256,6 +297,14 @@ class TestProtectedRoutes:
         )
 
         assert response.status_code == 302
+        assert '/login' in response.headers['Location']
+
+        with app.app_context():
+            saved_comment = Comment.query.filter_by(
+                workout_id=workout_id,
+                text='Should not save'
+            ).first()
+            assert saved_comment is None
 
     def test_logged_in_user_can_save_manual_feed_post(self, app, logged_in_client):
         """POST manual friend feed post should save it against the logged-in user."""
@@ -326,7 +375,7 @@ class TestProtectedRoutes:
             assert saved_comment.user_id == user_id
             assert saved_comment.text == 'Manual post comment'
 
-    def test_logged_out_user_cannot_save_manual_feed_post(self, client):
+    def test_logged_out_user_cannot_save_manual_feed_post(self, app, client):
         """POST manual friend feed post without login should redirect to login."""
         response = client.post(
             '/friends-feed/posts',
@@ -334,6 +383,11 @@ class TestProtectedRoutes:
         )
 
         assert response.status_code == 302
+        assert '/login' in response.headers['Location']
+
+        with app.app_context():
+            saved_post = FeedPost.query.filter_by(content='Should not save').first()
+            assert saved_post is None
 
     def test_owner_can_delete_friend_feed_workout(self, app, logged_in_client):
         """DELETE friend feed workout should remove the owner's workout from the public feed."""
@@ -354,7 +408,7 @@ class TestProtectedRoutes:
         assert response.get_json()['success'] is True
 
         with app.app_context():
-            saved_workout = Workout.query.get(workout_id)
+            saved_workout = db.session.get(Workout, workout_id)
             assert saved_workout is not None
             assert saved_workout.is_public is False
 
@@ -376,23 +430,30 @@ class TestProtectedRoutes:
         assert response.status_code == 403
 
         with app.app_context():
-            assert Workout.query.get(workout_id) is not None
+            saved_workout = db.session.get(Workout, workout_id)
+            assert saved_workout is not None
+            assert saved_workout.is_public is True
 
     def test_settings_logged_out_redirects(self, client):
         """GET /settings without login should redirect to login."""
         response = client.get('/settings', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_settings_logged_in(self, logged_in_client):
         """GET /settings while logged in should render settings page."""
         response = logged_in_client.get('/settings')
         assert response.status_code == 200
+        assert b'Settings' in response.data
+        assert b'Change Password' in response.data
+        assert b'Update Password' in response.data
 
     def test_welcome_logged_in_redirects_to_dashboard(self, logged_in_client):
         """GET / while logged in should redirect to dashboard."""
         response = logged_in_client.get('/', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/dashboard'
         assert b'Dashboard' in response.data
 
 
@@ -403,14 +464,19 @@ class TestAdminRoutes:
         """GET /admin without login should redirect to login."""
         response = client.get('/admin', follow_redirects=True)
         assert response.status_code == 200
+        assert response.request.path == '/login'
         assert b'Login' in response.data
 
     def test_admin_non_admin_user_gets_403(self, logged_in_client):
         """GET /admin as non-admin should return 403."""
         response = logged_in_client.get('/admin')
         assert response.status_code == 403
+        assert b'Forbidden' in response.data
 
     def test_admin_admin_user_gets_200(self, admin_client):
         """GET /admin as admin should return 200."""
         response = admin_client.get('/admin')
         assert response.status_code == 200
+        assert b'Admin Panel' in response.data
+        assert b'All Users' in response.data
+        assert b'admin@test.com' in response.data
