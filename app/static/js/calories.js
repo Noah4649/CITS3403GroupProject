@@ -138,7 +138,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         fetch(`/api/delete-meal/${mealId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
         })
         .then(response => response.json())
         .then(data => {
